@@ -105,6 +105,15 @@ def chat_proxy():
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "lsh_secret_2026")
 CORS(app, supports_credentials=True)
+@app.route("/api/debug")
+def debug():
+    try:
+        db = get_db()
+        db.close()
+        return jsonify({"status": "DB connected OK"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # ── Email config (set these as env vars or fill directly) ───────────────────
 MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "tamernasr1717@gmail.com")
