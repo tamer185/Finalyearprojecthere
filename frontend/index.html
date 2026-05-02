@@ -1,0 +1,4587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lebanon Sports Hub — 2026/2027</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* ============================================================
+   DESIGN TOKENS & RESET
+============================================================ */
+:root {
+  --white: #ffffff;
+  --off-white: #f8f9fb;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --primary: #1a56db;
+  --primary-dark: #1e40af;
+  --primary-light: #eff6ff;
+  --primary-mid: #3b82f6;
+  --accent: #f59e0b;
+  --accent-dark: #d97706;
+  --success: #10b981;
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --green-light: #ecfdf5;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+  --shadow: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -1px rgba(0,0,0,.05);
+  --shadow-md: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.04);
+  --shadow-lg: 0 20px 25px -5px rgba(0,0,0,.08), 0 10px 10px -5px rgba(0,0,0,.03);
+  --shadow-xl: 0 25px 50px -12px rgba(0,0,0,.12);
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  --transition: all .2s cubic-bezier(.4,0,.2,1);
+  --transition-slow: all .4s cubic-bezier(.4,0,.2,1);
+  --nav-h: 72px;
+  --font: 'Inter', sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font);background:var(--white);color:var(--gray-800);line-height:1.6;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;font-family:var(--font);border:none;outline:none}
+input,textarea,select{font-family:var(--font);outline:none}
+ul{list-style:none}
+
+/* ============================================================
+   SCROLLBAR
+============================================================ */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--gray-100)}
+::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:999px}
+::-webkit-scrollbar-thumb:hover{background:var(--primary)}
+
+/* ============================================================
+   UTILITY
+============================================================ */
+.hidden{display:none!important}
+.flex{display:flex}
+.flex-col{flex-direction:column}
+.items-center{align-items:center}
+.justify-between{justify-content:space-between}
+.justify-center{justify-content:center}
+.gap-1{gap:.25rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}.gap-8{gap:2rem}
+.text-center{text-align:center}
+.w-full{width:100%}
+.relative{position:relative}
+.absolute{position:absolute}
+.fixed{position:fixed}
+
+/* ============================================================
+   ANIMATIONS
+============================================================ */
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes chatPop{from{opacity:0;transform:scale(.8) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+.fade-in{animation:fadeIn .5s ease forwards}
+.slide-in{animation:slideIn .4s ease forwards}
+.scale-in{animation:scaleIn .3s ease forwards}
+
+/* ============================================================
+   TOP NAV
+============================================================ */
+#navbar{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  height:var(--nav-h);
+  background:rgba(255,255,255,.95);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--gray-200);
+  display:flex;align-items:center;
+  padding:0 2rem;
+  gap:2rem;
+  transition:var(--transition-slow);
+}
+#navbar.scrolled{
+  box-shadow:var(--shadow-md);
+}
+.nav-logo{
+  display:flex;align-items:center;gap:.6rem;
+  font-weight:800;font-size:1.2rem;color:var(--primary);
+  letter-spacing:-.02em;
+  flex-shrink:0;
+}
+.nav-logo .logo-icon{
+  width:36px;height:36px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-mid));
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:.9rem;
+}
+.nav-links{
+  display:flex;align-items:center;gap:.25rem;
+  flex:1;
+}
+.nav-link{
+  padding:.5rem .85rem;
+  border-radius:var(--radius-sm);
+  font-size:.875rem;font-weight:500;
+  color:var(--gray-600);
+  transition:var(--transition);
+  cursor:pointer;
+  display:flex;align-items:center;gap:.4rem;
+  white-space:nowrap;
+}
+.nav-link:hover{background:var(--gray-100);color:var(--gray-900)}
+.nav-link.active{background:var(--primary-light);color:var(--primary);font-weight:600}
+.nav-link i{font-size:.8rem}
+.nav-actions{
+  display:flex;align-items:center;gap:.75rem;margin-left:auto;
+}
+.nav-user{
+  display:flex;align-items:center;gap:.6rem;
+  padding:.4rem .8rem;
+  border-radius:var(--radius-full);
+  background:var(--gray-100);
+  cursor:pointer;
+  transition:var(--transition);
+}
+.nav-user:hover{background:var(--gray-200)}
+.nav-avatar{
+  width:28px;height:28px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--primary-mid));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:.75rem;font-weight:600;
+}
+.nav-username{font-size:.85rem;font-weight:500;color:var(--gray-700)}
+.nav-admin-badge{
+  font-size:.65rem;font-weight:700;
+  background:var(--accent);color:#fff;
+  padding:.1rem .35rem;border-radius:999px;
+  letter-spacing:.03em;text-transform:uppercase;
+}
+
+/* ── Notification Bell ── */
+.notif-wrap{position:relative}
+.notif-bell{
+  width:38px;height:38px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:var(--radius-sm);
+  background:var(--gray-100);color:var(--gray-600);
+  cursor:pointer;transition:var(--transition);border:none;
+  font-size:1rem;
+}
+.notif-bell:hover{background:var(--gray-200);color:var(--gray-900)}
+.notif-badge{
+  position:absolute;top:-4px;right:-4px;
+  min-width:18px;height:18px;
+  background:var(--danger);color:#fff;
+  border-radius:999px;font-size:.65rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 4px;border:2px solid #fff;
+  pointer-events:none;
+}
+.notif-panel{
+  position:absolute;top:calc(100% + 10px);right:0;
+  width:320px;max-height:420px;
+  background:#fff;border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-xl);border:1px solid var(--gray-200);
+  z-index:2000;overflow:hidden;
+  animation:scaleIn .2s ease;
+}
+.notif-panel-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:.85rem 1rem;border-bottom:1px solid var(--gray-100);
+}
+.notif-panel-header h4{font-size:.9rem;font-weight:700;color:var(--gray-900);margin:0}
+.notif-panel-body{overflow-y:auto;max-height:320px}
+.notif-item{
+  display:flex;gap:.75rem;padding:.9rem 1rem;
+  border-bottom:1px solid var(--gray-100);
+  transition:var(--transition);cursor:default;
+}
+.notif-item:hover{background:var(--gray-50)}
+.notif-item.unread{background:var(--primary-light)}
+.notif-item-icon{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:.95rem;
+}
+.notif-item-icon.approved{background:var(--green-light);color:var(--success)}
+.notif-item-icon.rejected{background:var(--danger-light);color:var(--danger)}
+.notif-item-icon.info{background:var(--primary-light);color:var(--primary)}
+.notif-item-title{font-size:.83rem;font-weight:700;color:var(--gray-900);margin-bottom:.2rem}
+.notif-item-msg{font-size:.78rem;color:var(--gray-500);line-height:1.4}
+.notif-item-time{font-size:.7rem;color:var(--gray-400);margin-top:.2rem}
+.notif-empty{padding:2rem 1rem;text-align:center;color:var(--gray-400);font-size:.85rem}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.4rem;
+  padding:.55rem 1.2rem;
+  border-radius:var(--radius-sm);
+  font-size:.875rem;font-weight:600;
+  transition:var(--transition);
+  cursor:pointer;
+  white-space:nowrap;
+}
+.btn-primary{
+  background:var(--primary);color:#fff;
+  box-shadow:0 1px 2px rgba(26,86,219,.3);
+}
+.btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,86,219,.35)}
+.btn-outline{
+  background:transparent;color:var(--primary);
+  border:1.5px solid var(--primary);
+}
+.btn-outline:hover{background:var(--primary-light)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#dc2626;transform:translateY(-1px)}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#059669}
+.btn-gray{background:var(--gray-100);color:var(--gray-700);border:1px solid var(--gray-200)}
+.btn-gray:hover{background:var(--gray-200)}
+.btn-lg{padding:.75rem 1.75rem;font-size:1rem;border-radius:var(--radius)}
+.btn-sm{padding:.35rem .8rem;font-size:.8rem}
+.btn-icon{
+  width:38px;height:38px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:var(--radius-sm);
+  background:var(--gray-100);color:var(--gray-600);
+  transition:var(--transition);
+}
+.btn-icon:hover{background:var(--gray-200);color:var(--gray-900)}
+
+.hamburger{
+  display:none;
+  flex-direction:column;gap:5px;
+  cursor:pointer;padding:.4rem;
+}
+.hamburger span{
+  width:22px;height:2px;
+  background:var(--gray-700);
+  border-radius:2px;
+  transition:var(--transition);
+}
+
+/* ============================================================
+   MOBILE NAV DRAWER
+============================================================ */
+.mobile-drawer{
+  position:fixed;top:0;right:-100%;
+  width:280px;height:100vh;
+  background:#fff;
+  z-index:1100;
+  padding:1.5rem;
+  box-shadow:var(--shadow-xl);
+  transition:right .3s ease;
+  display:flex;flex-direction:column;gap:.5rem;
+}
+.mobile-drawer.open{right:0}
+.drawer-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);
+  z-index:1099;
+  opacity:0;pointer-events:none;
+  transition:opacity .3s;
+}
+.drawer-overlay.show{opacity:1;pointer-events:all}
+.drawer-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:1rem;padding-bottom:1rem;
+  border-bottom:1px solid var(--gray-200);
+}
+.drawer-link{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.75rem 1rem;
+  border-radius:var(--radius-sm);
+  color:var(--gray-700);font-weight:500;
+  transition:var(--transition);
+  cursor:pointer;
+}
+.drawer-link:hover{background:var(--gray-100);color:var(--primary)}
+.drawer-link.active{background:var(--primary-light);color:var(--primary)}
+.drawer-link i{width:18px;text-align:center}
+
+/* ============================================================
+   PAGE WRAPPER
+============================================================ */
+.page{
+  min-height:100vh;
+  padding-top:var(--nav-h);
+  animation:fadeIn .4s ease;
+}
+.page.no-pad{padding-top:0}
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:0 1.5rem;
+}
+
+/* ============================================================
+   AUTH PAGES
+============================================================ */
+.auth-page{
+  min-height:100vh;
+  display:grid;grid-template-columns:1fr 1fr;
+  background:#fff;
+}
+.auth-visual{
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(145deg,#0f172a 0%,#1e3a5f 50%,#1a56db 100%);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:3rem;
+  gap:2rem;
+}
+.auth-visual-img{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1540747913346-19212a4de267?w=800&q=80') center/cover;
+  opacity:.15;
+}
+.auth-visual-content{
+  position:relative;z-index:1;
+  text-align:center;color:#fff;
+}
+.auth-visual-content h1{
+  font-size:2.5rem;font-weight:800;
+  line-height:1.2;margin-bottom:1rem;
+}
+.auth-visual-content p{
+  font-size:1rem;color:rgba(255,255,255,.75);
+  max-width:340px;margin:0 auto 2rem;
+}
+.auth-stats{
+  display:flex;gap:2rem;justify-content:center;
+}
+.auth-stat{
+  text-align:center;
+}
+.auth-stat .num{
+  font-size:2rem;font-weight:800;color:#fff;
+}
+.auth-stat .lbl{
+  font-size:.8rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.05em;
+}
+.auth-form-side{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:3rem 4rem;
+  max-width:500px;width:100%;margin:0 auto;
+}
+.auth-logo{
+  display:flex;align-items:center;gap:.6rem;
+  margin-bottom:2.5rem;
+  font-weight:800;font-size:1.3rem;color:var(--primary);
+}
+.auth-logo .logo-icon{
+  width:38px;height:38px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-mid));
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:.95rem;
+}
+.auth-title{font-size:1.75rem;font-weight:800;color:var(--gray-900);margin-bottom:.4rem}
+.auth-sub{font-size:.95rem;color:var(--gray-500);margin-bottom:2rem}
+.form-group{margin-bottom:1.25rem}
+.form-label{
+  display:block;margin-bottom:.4rem;
+  font-size:.85rem;font-weight:600;color:var(--gray-700);
+}
+.form-input{
+  width:100%;padding:.7rem 1rem;
+  border:1.5px solid var(--gray-200);
+  border-radius:var(--radius-sm);
+  font-size:.9rem;
+  color:var(--gray-800);
+  background:#fff;
+  transition:var(--transition);
+}
+.form-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,86,219,.12)}
+.form-input.error{border-color:var(--danger)}
+.form-input-wrap{
+  position:relative;
+}
+.form-input-wrap .input-icon{
+  position:absolute;left:.85rem;top:50%;transform:translateY(-50%);
+  color:var(--gray-400);font-size:.9rem;pointer-events:none;
+}
+.form-input-wrap .form-input{padding-left:2.5rem}
+.form-input-wrap .toggle-pw{
+  position:absolute;right:.85rem;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--gray-400);
+  cursor:pointer;font-size:.9rem;transition:var(--transition);
+}
+.form-input-wrap .toggle-pw:hover{color:var(--gray-700)}
+.form-error{font-size:.8rem;color:var(--danger);margin-top:.3rem;display:none}
+.form-error.show{display:block}
+.divider{
+  display:flex;align-items:center;gap:1rem;
+  margin:1.5rem 0;
+  color:var(--gray-400);font-size:.85rem;
+}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--gray-200)}
+.google-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:.75rem;
+  padding:.7rem;border:1.5px solid var(--gray-200);
+  border-radius:var(--radius-sm);
+  background:#fff;color:var(--gray-700);
+  font-size:.9rem;font-weight:600;
+  transition:var(--transition);
+  cursor:pointer;
+}
+.google-btn:hover{background:var(--gray-50);border-color:var(--gray-300);box-shadow:var(--shadow-sm)}
+.google-btn img{width:20px;height:20px}
+.auth-footer{
+  margin-top:1.5rem;text-align:center;
+  font-size:.875rem;color:var(--gray-500);
+}
+.auth-footer a,.auth-footer span{
+  color:var(--primary);font-weight:600;cursor:pointer;
+}
+.auth-footer a:hover,.auth-footer span:hover{text-decoration:underline}
+.auth-info-box{
+  background:var(--primary-light);border:1px solid #c7d7fd;
+  border-radius:var(--radius-sm);padding:.8rem 1rem;
+  font-size:.82rem;color:var(--primary-dark);
+  margin-bottom:1.25rem;
+  display:flex;gap:.5rem;align-items:flex-start;
+}
+.auth-info-box i{margin-top:.1rem;flex-shrink:0}
+
+/* Pending page */
+.pending-page{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--off-white);
+  padding:2rem;
+}
+.pending-card{
+  background:#fff;border-radius:var(--radius-xl);
+  padding:3rem;text-align:center;
+  max-width:480px;width:100%;
+  box-shadow:var(--shadow-lg);
+}
+.pending-icon{
+  width:80px;height:80px;
+  background:linear-gradient(135deg,#fef3c7,#fde68a);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 1.5rem;
+  font-size:2rem;color:var(--accent-dark);
+}
+.pending-card h2{font-size:1.5rem;font-weight:800;color:var(--gray-900);margin-bottom:.75rem}
+.pending-card p{color:var(--gray-500);margin-bottom:1.5rem;line-height:1.7}
+.status-badge{
+  display:inline-flex;align-items:center;gap:.4rem;
+  padding:.4rem 1rem;border-radius:var(--radius-full);
+  font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+}
+.status-pending{background:#fef3c7;color:#92400e}
+.status-approved{background:var(--green-light);color:#065f46}
+.status-rejected{background:var(--danger-light);color:#991b1b}
+
+/* ============================================================
+   ADMIN APPROVAL PANEL
+============================================================ */
+.admin-panel{
+  min-height:100vh;
+  padding:calc(var(--nav-h) + 2rem) 0 4rem;
+  background:var(--off-white);
+}
+.admin-header{
+  margin-bottom:2rem;
+}
+.admin-header h1{
+  font-size:1.75rem;font-weight:800;color:var(--gray-900);
+}
+.admin-header p{color:var(--gray-500)}
+.admin-tabs{
+  display:flex;gap:.5rem;margin-bottom:1.5rem;
+}
+.admin-tab{
+  padding:.5rem 1.25rem;border-radius:var(--radius-full);
+  font-size:.875rem;font-weight:600;
+  background:var(--gray-100);color:var(--gray-600);
+  cursor:pointer;transition:var(--transition);
+  border:none;
+}
+.admin-tab.active{background:var(--primary);color:#fff}
+.admin-tab .count{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;
+  background:rgba(255,255,255,.25);
+  border-radius:50%;font-size:.7rem;margin-left:.35rem;
+}
+.admin-tab:not(.active) .count{background:var(--gray-300);color:var(--gray-600)}
+.requests-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+  gap:1.25rem;
+}
+.request-card{
+  background:#fff;border-radius:var(--radius-lg);
+  border:1px solid var(--gray-200);
+  padding:1.5rem;
+  transition:var(--transition);
+}
+.request-card:hover{box-shadow:var(--shadow-md)}
+.request-user{
+  display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;
+}
+.request-avatar{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--primary-mid));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:1rem;font-weight:700;
+  flex-shrink:0;
+}
+.request-name{font-weight:700;color:var(--gray-900)}
+.request-email{font-size:.82rem;color:var(--gray-500)}
+.request-meta{
+  display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem;
+}
+.request-meta-item{
+  display:flex;align-items:center;gap:.35rem;
+  font-size:.78rem;color:var(--gray-500);
+  background:var(--gray-50);padding:.25rem .6rem;
+  border-radius:var(--radius-full);border:1px solid var(--gray-200);
+}
+.request-actions{display:flex;gap:.6rem}
+.request-actions .btn{flex:1;justify-content:center}
+
+/* ============================================================
+   HERO SECTION
+============================================================ */
+.hero{
+  min-height:90vh;
+  background:linear-gradient(145deg,#0f172a 0%,#1a2744 40%,#1e3a5f 100%);
+  display:flex;align-items:center;
+  position:relative;overflow:hidden;
+  padding:0 1.5rem;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1540747913346-19212a4de267?w=1600&q=80') center/cover;
+  opacity:.12;
+}
+.hero-gradient{
+  position:absolute;inset:0;
+  background:linear-gradient(to right,rgba(15,23,42,.95) 40%,rgba(15,23,42,.5) 100%);
+}
+.hero-particles{
+  position:absolute;inset:0;overflow:hidden;pointer-events:none;
+}
+.particle{
+  position:absolute;
+  width:2px;height:2px;
+  background:rgba(255,255,255,.4);
+  border-radius:50%;
+  animation:float 4s ease-in-out infinite;
+}
+.hero-content{
+  position:relative;z-index:2;
+  max-width:680px;
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:rgba(26,86,219,.2);
+  border:1px solid rgba(59,130,246,.3);
+  color:#93c5fd;
+  padding:.35rem .9rem;border-radius:var(--radius-full);
+  font-size:.8rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;
+  margin-bottom:1.5rem;
+}
+.hero-tag i{font-size:.7rem}
+.hero h1{
+  font-size:clamp(2.2rem,5vw,3.8rem);
+  font-weight:900;
+  color:#fff;
+  line-height:1.1;
+  letter-spacing:-.03em;
+  margin-bottom:1.25rem;
+}
+.hero h1 .accent{
+  background:linear-gradient(135deg,#60a5fa,#a78bfa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero p{
+  font-size:1.1rem;color:rgba(255,255,255,.7);
+  max-width:500px;margin-bottom:2.5rem;line-height:1.7;
+}
+.hero-btns{display:flex;gap:1rem;flex-wrap:wrap}
+.hero-btns .btn-primary{
+  background:var(--primary);
+  padding:.85rem 2rem;font-size:1rem;border-radius:var(--radius);
+}
+.hero-btns .btn-outline{
+  border-color:rgba(255,255,255,.3);color:#fff;
+  padding:.85rem 2rem;font-size:1rem;border-radius:var(--radius);
+}
+.hero-btns .btn-outline:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.5)}
+.hero-stats{
+  display:flex;gap:2.5rem;margin-top:3rem;
+  flex-wrap:wrap;
+}
+.hero-stat{
+  display:flex;flex-direction:column;
+}
+.hero-stat .n{
+  font-size:2rem;font-weight:800;color:#fff;letter-spacing:-.03em;
+}
+.hero-stat .l{
+  font-size:.8rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.05em;
+}
+.hero-visual{
+  position:absolute;right:0;top:0;bottom:0;
+  width:45%;
+  pointer-events:none;
+}
+.hero-img-grid{
+  position:absolute;right:2rem;top:50%;transform:translateY(-50%);
+  display:grid;grid-template-columns:1fr 1fr;gap:.75rem;
+  width:380px;
+}
+.hero-img-cell{
+  border-radius:var(--radius-lg);overflow:hidden;
+  box-shadow:var(--shadow-xl);
+}
+.hero-img-cell img{width:100%;height:140px;object-fit:cover;display:block}
+.hero-img-cell.tall img{height:200px}
+
+/* ============================================================
+   SECTION STYLES
+============================================================ */
+.section{padding:5rem 0}
+.section-alt{background:var(--gray-50)}
+.section-header{margin-bottom:3rem}
+.section-tag{
+  display:inline-flex;align-items:center;gap:.4rem;
+  font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--primary);margin-bottom:.75rem;
+}
+.section-tag i{font-size:.7rem}
+.section-title{
+  font-size:clamp(1.6rem,3vw,2.2rem);
+  font-weight:800;color:var(--gray-900);
+  letter-spacing:-.02em;margin-bottom:.6rem;
+}
+.section-sub{
+  font-size:1rem;color:var(--gray-500);
+  max-width:520px;line-height:1.7;
+}
+
+/* ============================================================
+   FILTER BAR
+============================================================ */
+.filter-bar{
+  display:flex;gap:.6rem;flex-wrap:wrap;
+  margin-bottom:2.5rem;align-items:center;
+}
+.filter-chip{
+  padding:.45rem 1rem;
+  border-radius:var(--radius-full);
+  font-size:.82rem;font-weight:600;
+  background:var(--gray-100);
+  color:var(--gray-600);
+  border:1.5px solid transparent;
+  cursor:pointer;
+  transition:var(--transition);
+  display:inline-flex;align-items:center;gap:.4rem;
+}
+.filter-chip:hover{background:var(--gray-200);color:var(--gray-800)}
+.filter-chip.active{
+  background:var(--primary-light);
+  color:var(--primary);
+  border-color:var(--primary);
+}
+.filter-chip .chip-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:currentColor;opacity:.6;
+}
+.search-wrap{
+  position:relative;margin-left:auto;
+}
+.search-wrap input{
+  padding:.5rem 1rem .5rem 2.4rem;
+  border-radius:var(--radius-full);
+  border:1.5px solid var(--gray-200);
+  font-size:.875rem;
+  background:#fff;
+  width:220px;
+  transition:var(--transition);
+}
+.search-wrap input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,86,219,.1);width:260px}
+.search-wrap i{
+  position:absolute;left:.75rem;top:50%;transform:translateY(-50%);
+  color:var(--gray-400);font-size:.85rem;pointer-events:none;
+}
+
+/* ============================================================
+   EVENT CARDS
+============================================================ */
+.events-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+  gap:1.5rem;
+}
+.event-card{
+  background:#fff;
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  border:1px solid var(--gray-200);
+  transition:var(--transition-slow);
+  cursor:pointer;
+  position:relative;
+}
+.event-card:hover{
+  transform:translateY(-6px);
+  box-shadow:var(--shadow-xl);
+  border-color:transparent;
+}
+.event-card-img{
+  position:relative;height:200px;overflow:hidden;
+}
+.event-card-img img{
+  width:100%;height:100%;object-fit:cover;
+  transition:transform .5s ease;
+}
+.event-card:hover .event-card-img img{transform:scale(1.05)}
+.event-card-badge{
+  position:absolute;top:.75rem;left:.75rem;
+  display:flex;gap:.4rem;
+}
+.badge{
+  display:inline-flex;align-items:center;gap:.3rem;
+  padding:.25rem .65rem;border-radius:var(--radius-full);
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  backdrop-filter:blur(8px);
+}
+.badge-sport{background:rgba(255,255,255,.92);color:var(--gray-800)}
+.badge-region{background:rgba(26,86,219,.85);color:#fff}
+.badge-new{background:rgba(245,158,11,.9);color:#fff}
+.event-card-fav{
+  position:absolute;top:.75rem;right:.75rem;
+  width:32px;height:32px;
+  background:rgba(255,255,255,.9);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--gray-400);
+  transition:var(--transition);
+  cursor:pointer;
+  backdrop-filter:blur(4px);
+}
+.event-card-fav:hover,.event-card-fav.active{color:var(--danger);background:#fff}
+.event-card-fav.active{color:var(--danger)}
+.event-card-body{padding:1.25rem}
+.event-card-meta{
+  display:flex;align-items:center;gap:.5rem;
+  margin-bottom:.6rem;
+}
+.event-date-pill{
+  display:inline-flex;align-items:center;gap:.35rem;
+  font-size:.75rem;font-weight:600;
+  color:var(--primary);
+  background:var(--primary-light);
+  padding:.25rem .65rem;border-radius:var(--radius-full);
+}
+.event-card-title{
+  font-size:1.05rem;font-weight:700;
+  color:var(--gray-900);
+  margin-bottom:.5rem;
+  line-height:1.3;
+}
+.event-card-desc{
+  font-size:.83rem;color:var(--gray-500);
+  line-height:1.6;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  margin-bottom:.85rem;
+}
+.event-card-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:.85rem;
+  border-top:1px solid var(--gray-100);
+}
+.event-price{
+  display:inline-flex;align-items:center;gap:.35rem;
+  font-size:.85rem;font-weight:700;
+  color:var(--success);
+  background:var(--green-light);
+  padding:.25rem .65rem;border-radius:var(--radius-full);
+}
+.event-location{
+  display:flex;align-items:center;gap:.4rem;
+  font-size:.8rem;color:var(--gray-500);
+}
+.event-location i{color:var(--primary);font-size:.75rem}
+.event-card-btn{
+  padding:.4rem .9rem;
+  background:var(--primary);color:#fff;
+  border-radius:var(--radius-sm);
+  font-size:.78rem;font-weight:600;
+  transition:var(--transition);
+  display:flex;align-items:center;gap:.3rem;
+}
+.event-card-btn:hover{background:var(--primary-dark)}
+
+/* ============================================================
+   MOHAFAZA SECTIONS
+============================================================ */
+.mohafaza-section{margin-bottom:3rem}
+.mohafaza-header{
+  display:flex;align-items:center;gap:1rem;
+  margin-bottom:1.5rem;padding-bottom:.75rem;
+  border-bottom:2px solid var(--gray-100);
+}
+.mohafaza-flag{
+  width:44px;height:44px;border-radius:var(--radius-sm);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;
+  background:var(--primary-light);
+}
+.mohafaza-title{font-size:1.25rem;font-weight:800;color:var(--gray-900)}
+.mohafaza-count{
+  font-size:.78rem;font-weight:600;
+  color:var(--gray-500);
+  background:var(--gray-100);
+  padding:.2rem .6rem;border-radius:var(--radius-full);
+  margin-left:.25rem;
+}
+
+/* ============================================================
+   EVENT DETAIL PAGE
+============================================================ */
+.detail-hero{
+  height:420px;position:relative;overflow:hidden;
+}
+.detail-hero img{width:100%;height:100%;object-fit:cover}
+.detail-hero-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.3) 50%,transparent 100%);
+}
+.detail-hero-back{
+  position:absolute;top:calc(var(--nav-h) + 1rem);left:1.5rem;
+  display:flex;align-items:center;gap:.5rem;
+  color:#fff;background:rgba(0,0,0,.3);
+  padding:.5rem 1rem;border-radius:var(--radius-sm);
+  backdrop-filter:blur(4px);font-size:.875rem;font-weight:500;
+  cursor:pointer;transition:var(--transition);
+}
+.detail-hero-back:hover{background:rgba(0,0,0,.5)}
+.detail-hero-content{
+  position:absolute;bottom:2rem;left:1.5rem;right:1.5rem;
+  color:#fff;
+}
+.detail-sport-badge{
+  display:inline-flex;align-items:center;gap:.35rem;
+  background:var(--primary);color:#fff;
+  padding:.3rem .8rem;border-radius:var(--radius-full);
+  font-size:.78rem;font-weight:700;text-transform:uppercase;
+  margin-bottom:.75rem;
+}
+.detail-hero-title{
+  font-size:clamp(1.5rem,4vw,2.5rem);
+  font-weight:900;line-height:1.15;letter-spacing:-.02em;
+  margin-bottom:.5rem;
+}
+.detail-hero-loc{
+  display:flex;align-items:center;gap:.4rem;
+  color:rgba(255,255,255,.75);font-size:.9rem;
+}
+.detail-body{
+  padding:3rem 0;
+}
+.detail-grid{
+  display:grid;grid-template-columns:1fr 340px;gap:2rem;
+  align-items:start;
+}
+.detail-main{}
+.detail-sidebar{}
+.detail-card{
+  background:#fff;border-radius:var(--radius-lg);
+  border:1px solid var(--gray-200);
+  padding:1.5rem;
+  margin-bottom:1.25rem;
+}
+.detail-card-title{
+  font-size:.9rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;
+  color:var(--gray-400);
+  margin-bottom:1rem;
+}
+.detail-desc{
+  font-size:.95rem;color:var(--gray-600);
+  line-height:1.8;
+}
+.detail-info-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:1rem;
+}
+.detail-info-item{
+  display:flex;flex-direction:column;gap:.25rem;
+}
+.detail-info-item .label{
+  font-size:.78rem;font-weight:600;color:var(--gray-400);
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.detail-info-item .value{
+  font-size:.95rem;font-weight:600;color:var(--gray-800);
+}
+.detail-map{
+  height:280px;border-radius:var(--radius-lg);
+  overflow:hidden;border:1px solid var(--gray-200);
+}
+.detail-register-card{
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  border-radius:var(--radius-lg);
+  padding:1.75rem;color:#fff;
+  text-align:center;
+  margin-bottom:1.25rem;
+}
+.detail-register-card h3{font-size:1.2rem;font-weight:800;margin-bottom:.5rem}
+.detail-register-card p{font-size:.85rem;color:rgba(255,255,255,.75);margin-bottom:1.25rem}
+.detail-register-card .btn{
+  width:100%;justify-content:center;
+  background:#fff;color:var(--primary);
+  font-weight:700;
+}
+.detail-register-card .btn:hover{background:var(--gray-100)}
+.detail-share{
+  display:flex;gap:.6rem;justify-content:center;
+  margin-top:1rem;
+}
+.share-btn{
+  width:36px;height:36px;
+  border-radius:50%;
+  background:rgba(255,255,255,.15);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:.85rem;
+  transition:var(--transition);cursor:pointer;
+  border:none;
+}
+.share-btn:hover{background:rgba(255,255,255,.3)}
+.organizer-card{
+  display:flex;align-items:center;gap:.75rem;
+}
+.organizer-avatar{
+  width:48px;height:48px;border-radius:50%;
+  overflow:hidden;background:var(--gray-200);flex-shrink:0;
+}
+.organizer-avatar img{width:100%;height:100%;object-fit:cover}
+.organizer-name{font-weight:700;color:var(--gray-900)}
+.organizer-role{font-size:.8rem;color:var(--gray-500)}
+
+/* ============================================================
+   MAP PAGE
+============================================================ */
+.map-page{
+  height:calc(100vh - var(--nav-h));
+  display:grid;
+  grid-template-columns:340px 1fr;
+}
+.map-sidebar{
+  background:#fff;
+  border-right:1px solid var(--gray-200);
+  overflow-y:auto;
+  display:flex;flex-direction:column;
+}
+.map-sidebar-header{
+  padding:1.25rem 1.25rem .75rem;
+  border-bottom:1px solid var(--gray-200);
+  position:sticky;top:0;background:#fff;z-index:1;
+}
+.map-sidebar-title{
+  font-size:1rem;font-weight:800;color:var(--gray-900);margin-bottom:.6rem;
+}
+.map-search{
+  position:relative;
+}
+.map-search input{
+  width:100%;padding:.5rem .75rem .5rem 2.1rem;
+  border:1.5px solid var(--gray-200);
+  border-radius:var(--radius-sm);
+  font-size:.83rem;
+  transition:var(--transition);
+}
+.map-search input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+.map-search i{
+  position:absolute;left:.65rem;top:50%;transform:translateY(-50%);
+  color:var(--gray-400);font-size:.8rem;
+}
+.map-event-list{flex:1;padding:.75rem;}
+.map-event-item{
+  display:flex;gap:.75rem;
+  padding:.85rem;
+  border-radius:var(--radius);
+  cursor:pointer;
+  transition:var(--transition);
+  border:1.5px solid transparent;
+  margin-bottom:.4rem;
+}
+.map-event-item:hover{background:var(--gray-50);border-color:var(--gray-200)}
+.map-event-item.active{background:var(--primary-light);border-color:var(--primary)}
+.map-event-thumb{
+  width:52px;height:52px;border-radius:var(--radius-sm);
+  overflow:hidden;flex-shrink:0;
+}
+.map-event-thumb img{width:100%;height:100%;object-fit:cover}
+.map-event-name{font-size:.85rem;font-weight:700;color:var(--gray-900);margin-bottom:.2rem;line-height:1.3}
+.map-event-sport{font-size:.75rem;color:var(--primary);font-weight:600}
+.map-event-loc{font-size:.75rem;color:var(--gray-500);display:flex;align-items:center;gap:.25rem;margin-top:.15rem}
+#mainMap{flex:1;}
+
+/* Leaflet popup override */
+.leaflet-popup-content-wrapper{
+  border-radius:var(--radius-lg)!important;
+  box-shadow:var(--shadow-xl)!important;
+  padding:0!important;
+  overflow:hidden!important;
+}
+.leaflet-popup-content{margin:0!important;width:260px!important}
+.map-popup-img{width:100%;height:130px;object-fit:cover}
+.map-popup-body{padding:.85rem}
+.map-popup-sport{
+  font-size:.7rem;font-weight:700;text-transform:uppercase;
+  color:var(--primary);margin-bottom:.25rem;letter-spacing:.04em;
+}
+.map-popup-title{font-size:.9rem;font-weight:800;color:var(--gray-900);margin-bottom:.3rem}
+.map-popup-date{font-size:.78rem;color:var(--gray-500);margin-bottom:.6rem;display:flex;align-items:center;gap:.3rem}
+.map-popup-btn{
+  display:block;width:100%;
+  padding:.5rem;background:var(--primary);color:#fff;
+  border-radius:var(--radius-sm);
+  text-align:center;font-size:.82rem;font-weight:600;
+  transition:var(--transition);cursor:pointer;border:none;
+}
+.map-popup-btn:hover{background:var(--primary-dark)}
+.custom-marker{
+  width:36px;height:36px;
+  border-radius:50%;
+  background:var(--primary);
+  border:3px solid #fff;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:.8rem;
+  box-shadow:0 4px 12px rgba(26,86,219,.4);
+  cursor:pointer;
+  transition:var(--transition);
+}
+.custom-marker:hover{transform:scale(1.15)}
+
+/* ============================================================
+   CHATBOT
+============================================================ */
+.chat-toggle{
+  position:fixed;bottom:2rem;right:2rem;z-index:999;
+  width:58px;height:58px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-mid));
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:1.4rem;
+  box-shadow:0 8px 24px rgba(26,86,219,.4);
+  cursor:pointer;
+  border:none;
+  transition:var(--transition);
+  animation:float 3s ease-in-out infinite;
+}
+.chat-toggle:hover{transform:scale(1.1)!important;animation:none}
+.chat-toggle .chat-badge{
+  position:absolute;top:-3px;right:-3px;
+  width:18px;height:18px;
+  background:var(--danger);
+  border-radius:50%;
+  font-size:.65rem;font-weight:700;
+  color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid #fff;
+}
+.chatbot-window{
+  position:fixed;bottom:6.5rem;right:2rem;z-index:998;
+  width:380px;max-height:600px;
+  background:#fff;
+  border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-xl);
+  border:1px solid var(--gray-200);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  animation:chatPop .3s ease;
+}
+.chat-header{
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  padding:1rem 1.25rem;
+  display:flex;align-items:center;gap:.75rem;
+  color:#fff;
+}
+.chat-avatar{
+  width:38px;height:38px;
+  background:rgba(255,255,255,.2);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;flex-shrink:0;
+}
+.chat-header-info{}
+.chat-header-name{font-weight:700;font-size:.95rem}
+.chat-header-status{font-size:.75rem;color:rgba(255,255,255,.75);display:flex;align-items:center;gap:.3rem}
+.chat-status-dot{
+  width:7px;height:7px;
+  background:#4ade80;border-radius:50%;
+  animation:pulse 2s infinite;
+}
+.chat-header-close{
+  margin-left:auto;background:rgba(255,255,255,.15);border:none;
+  color:#fff;width:30px;height:30px;
+  border-radius:50%;cursor:pointer;font-size:.95rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:var(--transition);
+}
+.chat-header-close:hover{background:rgba(255,255,255,.25)}
+.chat-messages{
+  flex:1;overflow-y:auto;
+  padding:1rem;
+  display:flex;flex-direction:column;gap:.75rem;
+  min-height:200px;max-height:400px;
+  background:var(--gray-50);
+}
+.chat-message{
+  display:flex;gap:.5rem;align-items:flex-end;
+  animation:fadeIn .3s ease;
+}
+.chat-message.user{flex-direction:row-reverse}
+.chat-msg-avatar{
+  width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--primary-mid));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:.65rem;flex-shrink:0;
+}
+.chat-msg-avatar.user-av{background:linear-gradient(135deg,var(--accent),var(--accent-dark))}
+.chat-bubble{
+  max-width:75%;
+  padding:.65rem .9rem;
+  border-radius:var(--radius-lg);
+  font-size:.85rem;line-height:1.5;
+  position:relative;
+}
+.chat-message.bot .chat-bubble{
+  background:#fff;color:var(--gray-800);
+  border-bottom-left-radius:4px;
+  box-shadow:var(--shadow-sm);
+  border:1px solid var(--gray-200);
+}
+.chat-message.user .chat-bubble{
+  background:var(--primary);color:#fff;
+  border-bottom-right-radius:4px;
+}
+.chat-bubble .chat-time{
+  font-size:.65rem;color:var(--gray-400);
+  display:block;margin-top:.25rem;
+}
+.chat-message.user .chat-bubble .chat-time{color:rgba(255,255,255,.6);text-align:right}
+.chat-typing{
+  display:flex;align-items:center;gap:.3rem;
+  padding:.65rem .9rem;
+  background:#fff;border-radius:var(--radius-lg);
+  border-bottom-left-radius:4px;
+  box-shadow:var(--shadow-sm);
+  border:1px solid var(--gray-200);
+  width:fit-content;
+}
+.chat-typing span{
+  width:7px;height:7px;
+  background:var(--gray-300);border-radius:50%;
+  animation:bounce 1s infinite;
+}
+.chat-typing span:nth-child(2){animation-delay:.15s}
+.chat-typing span:nth-child(3){animation-delay:.3s}
+.chat-suggestions{
+  padding:.6rem 1rem;
+  border-top:1px solid var(--gray-100);
+  display:flex;gap:.4rem;flex-wrap:wrap;
+  background:#fff;
+}
+.chat-suggest-btn{
+  padding:.3rem .7rem;
+  background:var(--primary-light);color:var(--primary);
+  border-radius:var(--radius-full);
+  font-size:.75rem;font-weight:600;
+  cursor:pointer;border:none;
+  transition:var(--transition);
+}
+.chat-suggest-btn:hover{background:var(--primary);color:#fff}
+.chat-input-area{
+  display:flex;gap:.5rem;
+  padding:.75rem 1rem;
+  border-top:1px solid var(--gray-200);
+  background:#fff;
+}
+.chat-input{
+  flex:1;padding:.55rem .9rem;
+  border:1.5px solid var(--gray-200);
+  border-radius:var(--radius-full);
+  font-size:.85rem;
+  transition:var(--transition);
+}
+.chat-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+.chat-send{
+  width:36px;height:36px;
+  background:var(--primary);color:#fff;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;
+  cursor:pointer;border:none;
+  transition:var(--transition);flex-shrink:0;
+}
+.chat-send:hover{background:var(--primary-dark);transform:scale(1.05)}
+.chat-locked{
+  padding:1.5rem;text-align:center;
+  color:var(--gray-500);font-size:.875rem;
+}
+.chat-locked i{font-size:2rem;color:var(--gray-300);display:block;margin-bottom:.75rem}
+
+/* ============================================================
+   PROFILE PAGE
+============================================================ */
+.profile-page{padding:calc(var(--nav-h) + 2rem) 0 4rem}
+.profile-cover{
+  height:200px;
+  background:linear-gradient(135deg,#0f172a,#1a56db);
+  border-radius:var(--radius-xl);
+  position:relative;overflow:hidden;
+  margin-bottom:4rem;
+}
+.profile-cover-img{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1200&q=80') center/cover;
+  opacity:.2;
+}
+.profile-avatar-wrap{
+  position:absolute;bottom:-3rem;left:2rem;
+}
+.profile-avatar{
+  width:90px;height:90px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--primary-mid));
+  border:4px solid #fff;
+  box-shadow:var(--shadow-md);
+  display:flex;align-items:center;justify-content:center;
+  font-size:2rem;font-weight:800;color:#fff;
+}
+.profile-header{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  margin-bottom:2rem;
+}
+.profile-name{font-size:1.6rem;font-weight:800;color:var(--gray-900)}
+.profile-email{font-size:.9rem;color:var(--gray-500);margin-top:.2rem}
+.profile-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;
+}
+.profile-card{
+  background:#fff;border-radius:var(--radius-lg);
+  border:1px solid var(--gray-200);
+  padding:1.5rem;
+}
+.profile-card-title{
+  font-size:.9rem;font-weight:700;
+  color:var(--gray-700);margin-bottom:1.25rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+.profile-card-title i{color:var(--primary)}
+.profile-info-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:.65rem 0;border-bottom:1px solid var(--gray-100);
+}
+.profile-info-row:last-child{border-bottom:none}
+.profile-info-row .label{font-size:.83rem;color:var(--gray-500)}
+.profile-info-row .value{font-size:.9rem;font-weight:600;color:var(--gray-800)}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.stat-box{
+  background:var(--gray-50);border-radius:var(--radius);
+  padding:1rem;text-align:center;
+}
+.stat-box .num{font-size:1.75rem;font-weight:800;color:var(--primary)}
+.stat-box .lbl{font-size:.78rem;color:var(--gray-500);font-weight:500}
+
+/* ============================================================
+   NOTIFICATIONS / TOASTS
+============================================================ */
+.toast-container{
+  position:fixed;top:calc(var(--nav-h) + 1rem);right:1.5rem;
+  z-index:9999;
+  display:flex;flex-direction:column;gap:.5rem;
+}
+.toast{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.85rem 1.25rem;
+  background:#fff;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-lg);
+  border:1px solid var(--gray-200);
+  min-width:280px;max-width:360px;
+  font-size:.875rem;font-weight:500;
+  color:var(--gray-800);
+  animation:slideIn .3s ease;
+}
+.toast.success{border-left:4px solid var(--success)}
+.toast.error{border-left:4px solid var(--danger)}
+.toast.info{border-left:4px solid var(--primary)}
+.toast i{font-size:1rem}
+.toast.success i{color:var(--success)}
+.toast.error i{color:var(--danger)}
+.toast.info i{color:var(--primary)}
+.toast-close{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:.85rem}
+
+/* ── Bell shake when new notification arrives ── */
+@keyframes bellShake{
+  0%,100%{transform:rotate(0)}
+  15%{transform:rotate(18deg)}
+  30%{transform:rotate(-16deg)}
+  45%{transform:rotate(12deg)}
+  60%{transform:rotate(-10deg)}
+  75%{transform:rotate(6deg)}
+  90%{transform:rotate(-4deg)}
+}
+.notif-bell.shake{animation:bellShake .6s ease}
+
+/* ── Rich notification toast (approval/rejection) ── */
+@keyframes notifSlideIn{
+  from{opacity:0;transform:translateX(120px) scale(.9)}
+  to{opacity:1;transform:translateX(0) scale(1)}
+}
+@keyframes notifSlideOut{
+  from{opacity:1;transform:translateX(0) scale(1)}
+  to{opacity:0;transform:translateX(120px) scale(.9)}
+}
+@keyframes progressBar{from{width:100%}to{width:0%}}
+.notif-toast{
+  position:relative;overflow:hidden;
+  display:flex;align-items:flex-start;gap:.85rem;
+  padding:1rem 1.15rem 1.25rem;
+  background:#fff;
+  border-radius:var(--radius-lg);
+  box-shadow:0 8px 32px rgba(0,0,0,.14),0 2px 8px rgba(0,0,0,.08);
+  border:1px solid var(--gray-200);
+  min-width:300px;max-width:380px;
+  animation:notifSlideIn .4s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.notif-toast.hide{animation:notifSlideOut .35s ease forwards}
+.notif-toast-approved{border-top:3px solid var(--success)}
+.notif-toast-rejected{border-top:3px solid var(--danger)}
+.notif-toast-info{border-top:3px solid var(--primary)}
+.notif-toast-icon{
+  width:40px;height:40px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-top:.05rem;
+}
+.notif-toast-approved .notif-toast-icon{background:var(--green-light);color:var(--success)}
+.notif-toast-rejected .notif-toast-icon{background:var(--danger-light);color:var(--danger)}
+.notif-toast-info .notif-toast-icon{background:var(--primary-light);color:var(--primary)}
+.notif-toast-title{font-size:.9rem;font-weight:700;color:var(--gray-900);margin-bottom:.2rem;line-height:1.3}
+.notif-toast-msg{font-size:.8rem;color:var(--gray-500);line-height:1.45}
+.notif-toast-close{
+  position:absolute;top:.6rem;right:.6rem;
+  background:none;border:none;cursor:pointer;
+  color:var(--gray-400);font-size:.75rem;padding:.2rem;
+  border-radius:4px;transition:var(--transition);
+}
+.notif-toast-close:hover{background:var(--gray-100);color:var(--gray-700)}
+.notif-toast-progress{
+  position:absolute;bottom:0;left:0;height:3px;
+  border-radius:0 0 0 var(--radius-lg);
+}
+.notif-toast-approved .notif-toast-progress{background:var(--success)}
+.notif-toast-rejected .notif-toast-progress{background:var(--danger)}
+.notif-toast-info .notif-toast-progress{background:var(--primary)}
+
+/* ============================================================
+   LOADING OVERLAY
+============================================================ */
+.loading-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(255,255,255,.95);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1rem;
+}
+.loading-spinner{
+  width:44px;height:44px;
+  border:3px solid var(--gray-200);
+  border-top-color:var(--primary);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+.loading-text{font-size:.9rem;color:var(--gray-500);font-weight:500}
+
+/* ============================================================
+   FOOTER
+============================================================ */
+footer{
+  background:var(--gray-900);
+  color:rgba(255,255,255,.6);
+  padding:3rem 0;
+  margin-top:auto;
+}
+.footer-inner{
+  display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:2rem;
+}
+.footer-brand .logo{
+  display:flex;align-items:center;gap:.5rem;
+  color:#fff;font-weight:800;font-size:1.1rem;
+  margin-bottom:.75rem;
+}
+.footer-brand .logo .logo-icon{
+  width:30px;height:30px;
+  background:var(--primary);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;
+}
+.footer-brand p{font-size:.83rem;line-height:1.7;max-width:240px}
+.footer-col h4{color:#fff;font-weight:700;font-size:.9rem;margin-bottom:1rem}
+.footer-col ul{display:flex;flex-direction:column;gap:.4rem}
+.footer-col ul li{font-size:.83rem;cursor:pointer;transition:var(--transition)}
+.footer-col ul li:hover{color:#fff}
+.footer-bottom{
+  border-top:1px solid rgba(255,255,255,.1);
+  margin-top:2rem;padding-top:1.5rem;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.8rem;
+}
+.footer-socials{display:flex;gap:.6rem}
+.footer-social{
+  width:32px;height:32px;
+  background:rgba(255,255,255,.08);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,.6);font-size:.8rem;
+  transition:var(--transition);cursor:pointer;
+}
+.footer-social:hover{background:var(--primary);color:#fff}
+
+/* ============================================================
+   EMPTY STATE
+============================================================ */
+.empty-state{
+  text-align:center;padding:4rem 2rem;
+}
+.empty-icon{
+  font-size:3rem;color:var(--gray-300);margin-bottom:1rem;
+}
+.empty-state h3{font-size:1.15rem;font-weight:700;color:var(--gray-700);margin-bottom:.5rem}
+.empty-state p{color:var(--gray-500);font-size:.9rem}
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media(max-width:1024px){
+  .auth-page{grid-template-columns:1fr}
+  .auth-visual{display:none}
+  .auth-form-side{padding:2.5rem 2rem;max-width:100%}
+  .detail-grid{grid-template-columns:1fr}
+  .footer-inner{grid-template-columns:1fr 1fr}
+  .hero-img-grid{display:none}
+  .hero{min-height:70vh}
+}
+@media(max-width:768px){
+  :root{--nav-h:64px}
+  .nav-links{display:none}
+  .hamburger{display:flex}
+  .map-page{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+  .map-sidebar{max-height:300px}
+  #mainMap{min-height:350px}
+  .events-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:1fr}
+  .chatbot-window{width:calc(100vw - 2rem);right:1rem;bottom:5.5rem}
+  .requests-grid{grid-template-columns:1fr}
+  .footer-inner{grid-template-columns:1fr}
+  .footer-col:not(.footer-brand){display:none}
+  .detail-hero{height:280px}
+  .hero-stat .n{font-size:1.5rem}
+  .filter-bar{gap:.35rem}
+  .search-wrap{display:none}
+  .auth-form-side{padding:2rem 1.25rem}
+  .admin-panel{padding:calc(var(--nav-h) + 1rem) 0 3rem}
+}
+@media(max-width:480px){
+  .hero h1{font-size:1.8rem}
+  .hero p{font-size:.9rem}
+  .hero-btns{flex-direction:column;width:100%}
+  .hero-btns .btn{width:100%;justify-content:center}
+  .chat-toggle{bottom:1.25rem;right:1.25rem}
+  .nav-logo span{display:none}
+}
+
+/* ============================================================
+   FORGOT PASSWORD MODAL
+============================================================ */
+.fp-overlay{
+  position:fixed;inset:0;z-index:3000;
+  background:rgba(0,0,0,.55);
+  display:flex;align-items:center;justify-content:center;
+  padding:1.5rem;
+  animation:fadeIn .2s ease;
+}
+.fp-overlay.hidden{display:none!important}
+.fp-card{
+  background:#fff;border-radius:var(--radius-xl);
+  padding:2.5rem 2rem;max-width:420px;width:100%;
+  box-shadow:var(--shadow-xl);
+  position:relative;
+  animation:scaleIn .25s ease;
+  max-height:90vh;overflow-y:auto;
+}
+.fp-close{
+  position:absolute;top:1rem;right:1rem;
+  background:var(--gray-100);border:none;
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--gray-500);font-size:.8rem;
+  transition:var(--transition);
+}
+.fp-close:hover{background:var(--gray-200);color:var(--gray-900)}
+.fp-steps .fp-step{display:none}
+.fp-steps .fp-step.active{display:block}
+.fp-icon{
+  width:64px;height:64px;border-radius:50%;
+  background:var(--primary-light);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 1.25rem;font-size:1.5rem;color:var(--primary);
+}
+/* Progress dots */
+.fp-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--gray-200);transition:var(--transition);
+}
+.fp-dot.active{background:var(--primary);transform:scale(1.2)}
+.fp-dot.done{background:var(--success)}
+/* 6-digit code boxes */
+.fp-code-box{
+  width:44px;height:54px;
+  border:2px solid var(--gray-200);
+  border-radius:var(--radius-sm);
+  text-align:center;font-size:1.4rem;font-weight:700;
+  color:var(--gray-900);background:#fff;
+  transition:var(--transition);
+  font-family:var(--font);
+}
+.fp-code-box:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,86,219,.12);outline:none}
+.fp-code-box.filled{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+.fp-code-box.error{border-color:var(--danger);background:var(--danger-light);color:var(--danger)}
+@media(max-width:400px){.fp-code-box{width:38px;height:48px;font-size:1.2rem}}
+
+/* ============================================================
+   PENDING PAGE AUTO-NOTIFY BANNER
+============================================================ */
+.pending-notify{
+  padding:.8rem 1rem;border-radius:var(--radius-sm);
+  font-size:.85rem;font-weight:600;
+  display:flex;align-items:center;gap:.5rem;
+  margin-bottom:1rem;
+}
+.pending-notify.approved{background:var(--green-light);color:#065f46}
+.pending-notify.rejected{background:var(--danger-light);color:#991b1b}
+.pending-notify.polling{background:var(--primary-light);color:var(--primary-dark)}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOADING OVERLAY
+============================================================ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading Lebanon Sports Hub…</div>
+</div>
+
+<!-- ============================================================
+     TOAST CONTAINER
+============================================================ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ============================================================
+     NAV
+============================================================ -->
+<nav id="navbar">
+  <div class="nav-logo" onclick="navigate('home')">
+    <div class="logo-icon"><i class="fas fa-trophy"></i></div>
+    <span>Lebanon <strong>Sports</strong></span>
+  </div>
+  <div class="nav-links" id="navLinks">
+    <div class="nav-link active" id="nl-home" onclick="navigate('home')"><i class="fas fa-home"></i> Home</div>
+    <div class="nav-link" id="nl-events" onclick="navigate('events')"><i class="fas fa-calendar-alt"></i> Events</div>
+    <div class="nav-link" id="nl-map" onclick="navigate('map')"><i class="fas fa-map-marked-alt"></i> Map</div>
+<div class="nav-link" id="nl-myevents" onclick="navigate('myevents')"><i class="fas fa-ticket-alt"></i> My Events</div>
+    <div class="nav-link" id="nl-chatbot" onclick="navigate('chatbot')"><i class="fas fa-robot"></i> AI Assistant</div>
+    <div class="nav-link hidden" id="nl-admin" onclick="window.open('admin.html','_blank')"><i class="fas fa-shield-alt"></i> Admin</div>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <!-- injected by JS -->
+  </div>
+  <div class="hamburger" id="hamburger" onclick="toggleDrawer()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- Mobile Drawer -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+<div class="mobile-drawer" id="mobileDrawer">
+  <div class="drawer-header">
+    <div class="nav-logo">
+      <div class="logo-icon"><i class="fas fa-trophy"></i></div>
+      <span>Lebanon Sports</span>
+    </div>
+    <button class="btn-icon" onclick="toggleDrawer()"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="drawer-link active" id="dl-home" onclick="navigate('home');toggleDrawer()"><i class="fas fa-home"></i> Home</div>
+  <div class="drawer-link" id="dl-events" onclick="navigate('events');toggleDrawer()"><i class="fas fa-calendar-alt"></i> Events</div>
+  <div class="drawer-link" id="dl-map" onclick="navigate('map');toggleDrawer()"><i class="fas fa-map-marked-alt"></i> Map</div>
+  <div class="drawer-link" id="dl-chatbot" onclick="navigate('chatbot');toggleDrawer()"><i class="fas fa-robot"></i> AI Assistant</div>
+  <div class="drawer-link hidden" id="dl-admin" onclick="window.open('admin.html','_blank');toggleDrawer()"><i class="fas fa-shield-alt"></i> Admin</div>
+  <div style="flex:1"></div>
+  <div id="drawerAuthArea"></div>
+</div>
+
+<!-- ============================================================
+     PAGES CONTAINER
+============================================================ -->
+<div id="appRoot"></div>
+
+<!-- ============================================================
+     CHATBOT WIDGET
+============================================================ -->
+<button class="chat-toggle hidden" id="chatToggle" onclick="toggleChat()">
+  <i class="fas fa-comment-dots"></i>
+  <span class="chat-badge hidden" id="chatBadge">1</span>
+</button>
+<div class="chatbot-window hidden" id="chatWindow">
+  <div class="chat-header">
+    <div class="chat-avatar"><i class="fas fa-robot"></i></div>
+    <div class="chat-header-info">
+      <div class="chat-header-name">SportBot Lebanon</div>
+      <div class="chat-header-status"><span class="chat-status-dot"></span> Online</div>
+    </div>
+    <button class="chat-header-close" onclick="toggleChat()"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-suggestions" id="chatSuggestions"></div>
+  <div class="chat-input-area">
+    <input type="text" class="chat-input" id="chatInput" placeholder="Ask me anything… or tap 🎤 to speak" onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chat-send" onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
+  </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+/* ============================================================
+   API + SESSION STORE
+============================================================ */
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://127.0.0.1:5000' : 'https://YOUR-PROJECT-NAME.vercel.app';
+
+// In-memory state
+let _currentUser  = null;
+let _userRegs     = [];  // populated after login
+let _favorites    = JSON.parse(localStorage.getItem('lsh_favorites')||'[]');
+
+const Session = {
+  getUser:  ()=>_currentUser,
+  setUser:  (u)=>{_currentUser=u;},
+  clearUser:()=>{_currentUser=null;_userRegs=[];},
+
+  // Favorites stay in localStorage (device-specific, no server needed)
+  toggleFav:(id)=>{
+    const i=_favorites.indexOf(id);
+    if(i>-1)_favorites.splice(i,1); else _favorites.push(id);
+    localStorage.setItem('lsh_favorites',JSON.stringify(_favorites));
+  },
+  isFav:(id)=>_favorites.includes(id),
+
+  // Registrations — kept in memory cache loaded from API
+  isRegistered:(eventId)=>_userRegs.some(r=>r.event_ref===eventId||r.event_id===eventId),
+  getRegistrationStatus:(eventId)=>{
+    const r=_userRegs.find(r=>r.event_ref===eventId||r.event_id===eventId);
+    return r?{status:r.status,id:r.id}:null;
+  },
+  getUserRegistrations:()=>_userRegs,
+  getPendingNotifications:()=>_userRegs.filter(r=>(r.status==='approved'||r.status==='rejected')&&!r._notified),
+  markNotified:(id)=>{const r=_userRegs.find(x=>x.id===id);if(r)r._notified=true;},
+
+  // Admin helpers — stub (admin.html handles this)
+  getPending:()=>[],
+  approveUser:(id)=>{},
+  rejectUser:(id)=>{},
+
+  get:(k)=>{if(k==='favorites')return _favorites;if(k==='users')return _currentUser?[_currentUser]:[];return null;},
+  set:()=>{},
+  addUser:()=>{},
+  findUser:()=>null,
+};
+
+async function _loadUserRegs(){
+  if(!_currentUser)return;
+  try{
+    const res=await fetch(`${API}/api/my-registrations`,{credentials:'include'});
+    if(res.ok)_userRegs=await res.json();
+  }catch(e){}
+}
+
+/* ============================================================
+   EVENTS DATA — 22 Events
+============================================================ */
+const EVENTS = [
+  /* BEIRUT */
+{
+    id:'ev-001',
+    mohafaza:'Beirut',
+    title:'Beirut International Football Classic',
+    description:'The premier football tournament gathering Lebanon\'s top clubs at the iconic Camille Chamoun Sports City Stadium. Featuring 16 teams competing across two weeks of world-class action, this event celebrates the beautiful game with a passionate crowd. Expert commentary, live screenings, and pre-match entertainment make this a must-attend.',
+    sport:'Football',sportIcon:'⚽',
+    date:'2027-03-15',time:'18:00',
+    location:'Camille Chamoun Sports City Stadium, Beirut',
+    coordinates:[33.8668,35.5252],
+    image:'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
+    organizer:'Lebanon Football Association',
+    capacity:22000,
+    price:75,
+    priceDisplay:'$75',
+    isNew:true,
+  },
+  {
+    id:'ev-002',
+    mohafaza:'Beirut',
+    title:'Beirut Marathon — Urban Sprint 2026',
+    description:'Run through the heart of Beirut in this world-famous marathon. With routes passing by the Corniche, Downtown, and the historic Gemmayzeh district, runners from over 50 countries join locals in celebrating Lebanon\'s resilience and spirit through sport.',
+    sport:'Running',sportIcon:'🏃',
+    date:'2026-11-08',time:'07:00',
+    location:'Martyrs\' Square, Downtown Beirut',
+    coordinates:[33.8938,35.5018],
+    image:'https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=800&q=80',
+    organizer:'Beirut Marathon Association',
+    capacity:40000,
+    price:50,
+priceDisplay:'$50',
+ isNew:false,
+  },
+  {
+    id:'ev-003',
+    mohafaza:'Beirut',
+    title:'AUB Basketball Championship 2026',
+    description:'The annual inter-university basketball tournament hosted at the American University of Beirut. Top university teams battle on the court in a high-energy atmosphere with cheering crowds, food vendors, and live music.',
+    sport:'Basketball',sportIcon:'🏀',
+    date:'2027-04-20',time:'15:00',
+    location:'AUB Sports Complex, Beirut',
+    coordinates:[33.9003,35.4784],
+    image:'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80',
+    organizer:'AUB Athletics Department',
+    capacity:3500,
+    isNew:true,
+  },
+  /* MOUNT LEBANON */
+  {
+    id:'ev-004',
+    mohafaza:'Mount Lebanon',
+    title:'Faraya Ski & Snowboard Grand Prix',
+    description:'Lebanon\'s premier winter sports event on the legendary Faraya-Mzaar slopes. World-class skiers and snowboarders compete in slalom, giant slalom, and freestyle events. Spectators enjoy après-ski entertainment, live DJs, and mountain cuisine.',
+    sport:'Skiing',sportIcon:'⛷️',
+    date:'2027-01-25',time:'10:00',
+    location:'Faraya-Mzaar Ski Resort, Mount Lebanon',
+    coordinates:[34.0,35.8],
+    image:'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&q=80',
+    organizer:'Lebanese Skiing Federation',
+    capacity:8000,
+    price:60,
+    priceDisplay:'$60',
+    isNew:false,
+  },
+  {
+    id:'ev-005',
+    mohafaza:'Mount Lebanon',
+    title:'Jounieh Waterfront Triathlon',
+    description:'Swim, cycle, and run through the stunning Bay of Jounieh. This Olympic-distance triathlon features a 1.5km swim in the Mediterranean, 40km cycling on coastal roads, and 10km run along the scenic waterfront promenade.',
+    sport:'Triathlon',sportIcon:'🏊',
+    date:'2026-06-14',time:'06:30',
+    location:'Jounieh Bay, Mount Lebanon',
+    coordinates:[33.9806,35.6178],
+    image:'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&q=80',
+    organizer:'Lebanon Triathlon Federation',
+    capacity:1200,
+    price:80,
+    priceDisplay:'$80',
+    isNew:true,
+  },
+  {
+    id:'ev-006',
+    mohafaza:'Mount Lebanon',
+    title:'Byblos International Tennis Open',
+    description:'Held against the backdrop of ancient Phoenician ruins, this ATP Challenger-level tournament attracts top-ranked players from across the region. Night matches under the stars at Byblos create an unparalleled sporting atmosphere.',
+    sport:'Tennis',sportIcon:'🎾',
+    date:'2026-09-05',time:'16:00',
+    location:'Byblos Tennis Club, Byblos',
+    coordinates:[34.1208,35.6483],
+    image:'https://images.unsplash.com/photo-1617296538902-887900d9b592?w=800&q=80',
+    organizer:'Lebanese Tennis Federation',
+    capacity:2000,
+    price:40,
+    priceDisplay:'$40',
+
+    isNew:false,
+  },
+  /* NORTH LEBANON */
+  {
+    id:'ev-007',
+    mohafaza:'North Lebanon',
+    title:'Tripoli Boxing Championship',
+    description:'The North\'s most anticipated combat sports event showcases Lebanon\'s best boxers competing across multiple weight divisions. Held at the modern Tripoli Sports Complex, this championship draws huge crowds and national media coverage.',
+    sport:'Boxing',sportIcon:'🥊',
+    date:'2027-05-10',time:'19:00',
+    location:'Tripoli Sports Complex, Tripoli',
+    coordinates:[34.4333,35.8333],
+    image:'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&q=80',
+    organizer:'North Lebanon Boxing Committee',
+    capacity:5000,
+    price:30,
+    priceDisplay:'$30',
+    isNew:true,
+  },
+  {
+    id:'ev-008',
+    mohafaza:'North Lebanon',
+    title:'Cedars Mountain Trail Run',
+    description:'Run through the magnificent Cedars of Lebanon in this challenging mountain trail race. Three distance categories (10K, 21K, 42K) wind through ancient cedar forests, offering breathtaking views and a unique connection with Lebanon\'s natural heritage.',
+    sport:'Trail Running',sportIcon:'🏔️',
+    date:'2027-10-03',time:'08:00',
+    location:'The Cedars, Bcharre, North Lebanon',
+    coordinates:[34.2333,36.05],
+    image:'https://images.unsplash.com/photo-1571008887538-b36bb32f4571?w=800&q=80',
+    organizer:'Lebanon Trail Runners Association',
+    capacity:500,
+    price:25,
+    priceDisplay:'$25',
+    isNew:false,
+  },
+  {
+    id:'ev-009',
+    mohafaza:'North Lebanon',
+    title:'Tripoli Volleyball League Finals',
+    description:'The climax of the North Lebanon Volleyball League season, bringing together the four best teams for a thrilling two-day finals weekend. Indoor and beach volleyball formats keep the excitement building throughout.',
+    sport:'Volleyball',sportIcon:'🏐',
+    date:'2026-07-18',time:'17:00',
+    location:'Municipal Stadium, Tripoli',
+    coordinates:[34.44,35.85],
+    image:'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800&q=80',
+    organizer:'North Lebanon Volleyball Federation',
+    capacity:4000,
+    price:20,
+    priceDisplay:'$20',
+    isNew:false,
+  },
+  /* SOUTH LEBANON */
+  {
+    id:'ev-010',
+    mohafaza:'South Lebanon',
+    title:'Sidon Sea Sports Festival',
+    description:'A spectacular multi-sport festival along the ancient coastal city of Sidon. Featuring open-water swimming, kayaking, stand-up paddleboarding, and beach football, this festival celebrates the relationship between Southern Lebanon\'s communities and the sea.',
+    sport:'Water Sports',sportIcon:'🌊',
+    date:'2026-08-22',time:'09:00',
+    location:'Sidon Seafront, South Lebanon',
+    coordinates:[33.5606,35.3758],
+    image:'https://images.unsplash.com/photo-1530870110042-98b2cb110834?w=800&q=80',
+    organizer:'South Lebanon Sports Authority',
+    capacity:3000,
+    price:15,
+    priceDisplay:'$15',
+    isNew:true,
+  },
+  {
+    id:'ev-011',
+    mohafaza:'South Lebanon',
+    title:'Tyre Coast Cycling Race',
+    description:'A scenic coastal cycling race starting from the ancient city of Tyre and winding through the beautiful landscapes of South Lebanon. Professional and amateur categories available, with the professional race covering 120km of challenging terrain.',
+    sport:'Cycling',sportIcon:'🚴',
+    date:'2027-04-05',time:'07:30',
+    location:'Tyre (Sour) Corniche, South Lebanon',
+    coordinates:[33.2711,35.2038],
+    image:'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80',
+    organizer:'Lebanese Cycling Federation',
+    capacity:800,
+    price:20,
+    priceDisplay:'$20',
+    isNew:false,
+  },
+  /* NABATIEH */
+  {
+    id:'ev-012',
+    mohafaza:'Nabatieh',
+    title:'Nabatieh Judo & Martial Arts Cup',
+    description:'A prestigious regional martial arts tournament held in Nabatieh, bringing together judokas, karate practitioners, and taekwondo athletes from across Lebanon and neighboring countries. Multi-day event with youth and senior divisions.',
+    sport:'Martial Arts',sportIcon:'🥋',
+    date:'2027-03-28',time:'10:00',
+    location:'Nabatieh Indoor Stadium, Nabatieh',
+    coordinates:[33.3806,35.4839],
+    image:'https://images.unsplash.com/photo-1555597673-b21d5c935865?w=800&q=80',
+    organizer:'Nabatieh Sports Federation',
+    capacity:2500,
+    price:10,
+    priceDisplay:'$10',
+    isNew:false,
+  },
+  {
+    id:'ev-013',
+    mohafaza:'Nabatieh',
+    title:'Marjayoun Valley Football Derby',
+    description:'The fiercest local derby in South Lebanon as the two historic rivals from Marjayoun Valley face off in what promises to be an electric match. The event also features youth matches, local food, and cultural celebrations.',
+    sport:'Football',sportIcon:'⚽',
+    date:'2027-06-28',time:'18:30',
+    location:'Marjayoun Municipal Stadium',
+    coordinates:[33.3611,35.5875],
+    image:'https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=800&q=80',
+    organizer:'Marjayoun Sports Club',
+    capacity:6000,
+    price:25,
+    priceDisplay:'$25',
+    isNew:true,
+  },
+  /* BEKAA */
+  {
+    id:'ev-014',
+    mohafaza:'Bekaa',
+    title:'Zahle Cycling Gran Fondo',
+    description:'Wind through the gorgeous Bekaa Valley vineyards and farmlands in this celebrated cycling event. Starting from the "Bride of the Bekaa," Zahle, routes traverse the valley floor with views of both the Lebanese and Anti-Lebanon mountain ranges.',
+    sport:'Cycling',sportIcon:'🚴',
+    date:'2027-05-30',time:'07:00',
+    location:'Zahle City Center, Bekaa',
+    coordinates:[33.8461,35.9014],
+    image:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
+    organizer:'Bekaa Cycling Club',
+    capacity:600,
+    price:20,
+
+    priceDisplay:'$20',
+    isNew:false,
+  },
+  {
+    id:'ev-015',
+    mohafaza:'Bekaa',
+    title:'Chtaura Athletics Open',
+    description:'A comprehensive athletics meeting covering track and field disciplines from sprints to throws and jumps. Held at the newly renovated Chtaura Athletics Stadium, this event serves as a key qualifier for the national athletics championships.',
+    sport:'Athletics',sportIcon:'🏅',
+    date:'2026-09-19',time:'09:00',
+    location:'Chtaura Athletics Stadium, Bekaa',
+    coordinates:[33.8167,35.855],
+    image:'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&q=80',
+    organizer:'Lebanese Athletics Federation',
+    capacity:3000,
+    price:15,
+    priceDisplay:'$15',
+    isNew:true,
+  },
+  /* BAALBEK-HERMEL */
+  {
+    id:'ev-016',
+    mohafaza:'Baalbek-Hermel',
+    title:'Baalbek Temple Run — Heritage Race',
+    description:'Run past one of the ancient world\'s most spectacular monuments in this unique heritage race. The course winds around the legendary Baalbek Temples complex — a UNESCO World Heritage Site — in an unforgettable fusion of sport and history.',
+    sport:'Running',sportIcon:'🏛️',
+    date:'2026-07-12',time:'08:00',
+    location:'Baalbek Temples, Baalbek-Hermel',
+    coordinates:[34.0,36.2167],
+    image:'https://images.unsplash.com/photo-1541417904950-b855846fe074?w=800&q=80',
+    organizer:'Baalbek Heritage Sports Initiative',
+    capacity:2000,
+    price:30,
+    priceDisplay:'$30',
+    isNew:true,
+  },
+  {
+    id:'ev-017',
+    mohafaza:'Baalbek-Hermel',
+    title:'Hermel Horseback Riding Championship',
+    description:'Celebrating the deep equestrian traditions of the Hermel region, this championship brings together Lebanon\'s finest riders and horses. Events include show jumping, dressage, and traditional endurance riding through the rugged Hermel landscape.',
+    sport:'Equestrian',sportIcon:'🐎',
+    date:'2026-07-05',time:'10:00',
+    location:'Hermel Equestrian Club, Hermel',
+    coordinates:[34.3917,36.3889],
+    image:'https://images.unsplash.com/photo-1553284966-19b8815c7817?w=800&q=80',
+    organizer:'Lebanese Equestrian Federation',
+    capacity:3000,
+    price:40,
+    priceDisplay:'$40',
+    isNew:false,
+  },
+  /* AKKAR */
+  {
+    id:'ev-018',
+    mohafaza:'Akkar',
+    title:'Akkar Forest Adventure Race',
+    description:'A demanding multi-discipline adventure race through the stunning forests and rivers of Akkar. Teams of four tackle orienteering, kayaking, mountain biking, and trekking over 24 hours. The unspoiled wilderness of Akkar makes this race truly exceptional.',
+    sport:'Adventure',sportIcon:'🌲',
+    date:'2026-10-17',time:'06:00',
+    location:'Akkar Forest Reserve, Akkar',
+    coordinates:[34.5333,36.1],
+    image:'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80',
+    organizer:'Lebanon Adventure Sports Federation',
+    capacity:400,
+    price:100,
+    priceDisplay:'$100',
+    isNew:true,
+  },
+  {
+    id:'ev-019',
+    mohafaza:'Akkar',
+    title:'Fnaydeq Basketball Invitational',
+    description:'A three-day basketball tournament in the heart of Akkar bringing together club teams from across North Lebanon. Community events, youth coaching clinics, and social activities make this more than just a tournament.',
+    sport:'Basketball',sportIcon:'🏀',
+    date:'2026-08-08',time:'16:00',
+    location:'Fnaydeq Sports Hall, Akkar',
+    coordinates:[34.4856,36.1833],
+    image:'https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=800&q=80',
+    organizer:'Akkar Basketball Association',
+    capacity:1500,
+    price:20,
+    priceDisplay:'$20',
+    isNew:false,
+  },
+  /* ADDITIONAL */
+  {
+    id:'ev-020',
+    mohafaza:'Beirut',
+    title:'Lebanon Padel Masters 2026',
+    description:'The fastest-growing sport arrives in Beirut with this professional padel tournament. International and Lebanese players compete at the world-class facility at the Beirut Sports Center, with matches broadcast live and fan zones packed with entertainment.',
+    sport:'Padel',sportIcon:'🎾',
+    date:'2026-12-05',time:'14:00',
+    location:'Beirut Sports Center, Sin El Fil',
+    coordinates:[33.884,35.543],
+    image:'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&q=80',
+    organizer:'Lebanon Padel Federation',
+    capacity:5000,
+    price:35,
+    priceDisplay:'$35',
+    isNew:true,
+  },
+  {
+    id:'ev-021',
+    mohafaza:'Mount Lebanon',
+    title:'Metn Youth Swimming Championships',
+    description:'A competitive swimming meet for Lebanon\'s brightest young aquatic talent. Over 300 young swimmers from across the country compete in all strokes and distances. A talent identification program runs alongside for national team selection.',
+    sport:'Swimming',sportIcon:'🏊',
+    date:'2026-07-25',time:'09:00',
+    location:'Metn Olympic Pool, Dora',
+    coordinates:[33.9005,35.5608],
+    image:'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&q=80',
+    organizer:'Lebanon Swimming Federation',
+    capacity:1000,
+    price:10,
+    priceDisplay:'$10',
+    isNew:false,
+  },
+  {
+    id:'ev-022',
+    mohafaza:'South Lebanon',
+    title:'Bint Jbeil Women\'s Sports Day',
+    description:'A landmark celebration of women in sports in South Lebanon. Featuring football, volleyball, athletics, and martial arts competitions exclusively for women, this event champions gender equality in Lebanese sport and inspires a new generation of female athletes.',
+    sport:'Multi-Sport',sportIcon:'🏆',
+    date:'2026-08-08',time:'10:00',
+    location:'Bint Jbeil Stadium, South Lebanon',
+    coordinates:[33.1178,35.4283],
+    image:'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80',
+    organizer:'South Lebanon Women\'s Sports Coalition',
+    capacity:4000,
+    price:40,
+    priceDisplay:'$40',
+    isNew:true,
+  },
+];
+
+const MOHAFAZAT = [
+  {name:'Beirut',flag:'🏙️',image:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80'},
+  {name:'Mount Lebanon',flag:'⛰️',image:'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=80'},
+  {name:'North Lebanon',flag:'🌲',image:'https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&q=80'},
+  {name:'South Lebanon',flag:'🌊',image:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80'},
+  {name:'Nabatieh',flag:'🕌',image:'https://images.unsplash.com/photo-1566438480900-0609be27a4be?w=600&q=80'},
+  {name:'Bekaa',flag:'🌾',image:'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80'},
+  {name:'Baalbek-Hermel',flag:'🏛️',image:'https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=600&q=80'},
+  {name:'Akkar',flag:'🌿',image:'https://images.unsplash.com/photo-1542401886-65d6c61db217?w=600&q=80'},
+];
+
+const SPORT_TYPES = [...new Set(EVENTS.map(e=>e.sport))];
+
+/* ============================================================
+   CHATBOT RESPONSES
+============================================================ */
+const CHAT_RESPONSES = {
+  greet:['Hello! Welcome to Lebanon Sports Hub 🎉 How can I help you today?','Hi there! I\'m SportBot, your AI sports assistant for Lebanon. What would you like to know?','Welcome! Ready to explore Lebanon\'s exciting sports events? Ask me anything!'],
+  events:['Lebanon Sports Hub hosts 22 amazing events across all 8 mohafazat in 2026! From the Beirut International Football Classic to the Baalbek Temple Run. Use the Events tab to explore all of them.','We have events ranging from Football and Basketball to Adventure Racing and Equestrian sports. Which sport interests you most?','Our 2026 calendar is packed! Football, tennis, skiing, cycling, running, martial arts and more across all of Lebanon.'],
+  football:['⚽ Football fans will love the Beirut International Football Classic on March 15, 2026 at Camille Chamoun Sports City Stadium, and the Marjayoun Valley Football Derby on June 28. Both are incredible events!','The Beirut International Football Classic is our premier football event with 22,000 capacity. Don\'t miss it!'],
+  skiing:['⛷️ The Faraya Ski & Snowboard Grand Prix on January 25, 2026 is Lebanon\'s premier winter sports event. The Faraya-Mzaar slopes are world-class!','Winter sports lovers should head to Faraya! The Grand Prix features slalom, giant slalom, and freestyle events.'],
+  running:['🏃 Check out the Beirut Marathon on November 8, the Cedars Mountain Trail Run on October 3, and the Baalbek Temple Run on April 12. Three incredible running events!','The Beirut Marathon is one of the most celebrated runs in the Middle East with 40,000 participants!'],
+  map:['🗺️ Check out our interactive Map tab to see all 22 events plotted across Lebanon. Click any marker for event details!','The map shows all events across Lebanon\'s mohafazat. You can click markers to preview events and navigate to full details.'],
+  register:['To register for an event, click on any event card and use the "Register Now" button. You need to be logged in first!','Event registration is available on each event\'s detail page. Just browse to the event you\'re interested in!'],
+  help:['I can help with: finding events, sport information, locations, dates, registration, and general sports info in Lebanon. What do you need?','Ask me about specific sports, mohafazat, event dates, how to register, or anything else about Lebanon Sports Hub!'],
+  location:['Events are spread across all 8 Lebanese mohafazat: Beirut, Mount Lebanon, North Lebanon, South Lebanon, Nabatieh, Bekaa, Baalbek-Hermel, and Akkar.','Use the Map tab to see exact locations, or filter events by mohafaza in the Events section!'],
+  default:['Interesting question! I\'m here to help with Lebanon sports events. Try asking about specific sports, locations, or event dates.','I\'m not sure about that, but I can help you find events, locations, and sport information. What sport are you interested in?','Great question! Explore our Events and Map sections for detailed information. Is there a specific sport or region you\'re curious about?'],
+};
+
+function getBotReply(msg) {
+  const m = msg.toLowerCase();
+  if(m.match(/hi|hello|hey|welcome|greetings/)) return pick(CHAT_RESPONSES.greet);
+  if(m.match(/event|what.*on|show.*event|find.*event/)) return pick(CHAT_RESPONSES.events);
+  if(m.match(/football|soccer/)) return pick(CHAT_RESPONSES.football);
+  if(m.match(/ski|snow|winter/)) return pick(CHAT_RESPONSES.skiing);
+  if(m.match(/run|marathon|trail/)) return pick(CHAT_RESPONSES.running);
+  if(m.match(/map|location|where|place/)) return pick(CHAT_RESPONSES.map);
+  if(m.match(/register|sign up|join|participate/)) return pick(CHAT_RESPONSES.register);
+  if(m.match(/help|what can|assist/)) return pick(CHAT_RESPONSES.help);
+  if(m.match(/beirut|mount|north|south|nabatieh|bekaa|baalbek|akkar|mohafaza|region/)) return pick(CHAT_RESPONSES.location);
+  // Event-specific
+  const ev = EVENTS.find(e=>m.includes(e.title.toLowerCase().split(' ').slice(0,2).join(' ').toLowerCase()));
+  if(ev) return `📅 **${ev.title}** is on ${formatDate(ev.date)} at ${ev.time} — ${ev.location}. Capacity: ${ev.capacity.toLocaleString()} attendees. Click the event for full details!`;
+  return pick(CHAT_RESPONSES.default);
+}
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)] }
+
+/* ============================================================
+   STATE
+============================================================ */
+let currentPage = 'signin';
+let currentEvent = null;
+let map = null;
+let markers = [];
+let chatOpen = false;
+let filterMohafaza = 'All';
+let filterSport = 'All';
+let searchQuery = '';
+let chatInitialized = false;
+let drawerOpen = false;
+let pendingBadgeShown = false;
+
+/* ============================================================
+   HELPERS
+============================================================ */
+function formatDate(d){
+  const dt = new Date(d);
+  return dt.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+}
+function formatTime(t){
+  const [h,m]=t.split(':');
+  const hr=parseInt(h);
+  return `${hr>12?hr-12:hr}:${m} ${hr>=12?'PM':'AM'}`;
+}
+function uid(){return 'usr-'+Math.random().toString(36).slice(2,9)}
+function now(){return new Date().toISOString()}
+function timeStamp(){
+  const d=new Date();
+  return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+}
+function getInitials(name){
+  return name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+function toast(msg,type='info',duration=3500){
+  const icons={success:'fa-check-circle',error:'fa-times-circle',info:'fa-info-circle'};
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=`<i class="fas ${icons[type]}"></i><span>${msg}</span><button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(()=>t.remove(),duration);
+}
+
+/* ============================================================
+   NAV UTILS
+============================================================ */
+function updateNav(){
+  const user = Session.getUser();
+  const actions = document.getElementById('navActions');
+  const drawerAuth = document.getElementById('drawerAuthArea');
+  
+  if(user){
+    const isAdmin = user.isAdmin;
+    actions.innerHTML=`
+      ${isAdmin?`<span class="status-badge status-approved" style="font-size:.7rem">
+        <i class="fas fa-shield-alt"></i> Admin
+      </span>`:''}
+      <div class="notif-wrap" id="notifWrap">
+        <button class="notif-bell" onclick="toggleNotifPanel(event)" title="Notifications">
+          <i class="fas fa-bell"></i>
+        </button>
+        <div class="notif-panel hidden" id="notifPanel">
+          <div class="notif-panel-header">
+            <h4><i class="fas fa-bell" style="margin-right:.4rem;color:var(--primary)"></i>Notifications</h4>
+            <button onclick="clearAllNotifs()" style="font-size:.75rem;color:var(--gray-400);background:none;border:none;cursor:pointer">Clear all</button>
+          </div>
+          <div class="notif-panel-body" id="notifList">
+            <div class="notif-empty"><i class="fas fa-check-circle" style="display:block;font-size:1.5rem;margin-bottom:.5rem;color:var(--gray-300)"></i>No notifications</div>
+          </div>
+        </div>
+      </div>
+      <div class="nav-user" onclick="navigate('profile')">
+        <div class="nav-avatar">${getInitials(user.name)}</div>
+        <span class="nav-username">${user.name.split(' ')[0]}</span>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()">
+        <i class="fas fa-sign-out-alt"></i> Sign Out
+      </button>
+    `;
+    drawerAuth.innerHTML=`
+      <div class="drawer-link" onclick="navigate('profile');toggleDrawer()"><i class="fas fa-user"></i> Profile</div>
+      <div class="drawer-link" style="color:var(--danger)" onclick="doLogout();toggleDrawer()"><i class="fas fa-sign-out-alt"></i> Sign Out</div>
+    `;
+    document.getElementById('chatToggle').classList.remove('hidden');
+    document.getElementById('nl-admin').classList.toggle('hidden',!isAdmin);
+    document.getElementById('dl-admin').classList.toggle('hidden',!isAdmin);
+    // Show pending badge for admin
+    if(isAdmin && !pendingBadgeShown){
+      const pending=Session.getPending().length;
+      if(pending>0){
+        setTimeout(()=>toast(`⚠️ ${pending} user(s) awaiting approval in Admin panel`,'info'),800);
+        pendingBadgeShown=true;
+      }
+    }
+  } else {
+    actions.innerHTML=`
+      <button class="btn btn-gray btn-sm" onclick="navigate('signin')"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+      <button class="btn btn-primary btn-sm" onclick="navigate('signup')"><i class="fas fa-user-plus"></i> Register</button>
+    `;
+    drawerAuth.innerHTML=`
+      <div class="drawer-link" onclick="navigate('signin');toggleDrawer()"><i class="fas fa-sign-in-alt"></i> Sign In</div>
+      <div class="drawer-link" onclick="navigate('signup');toggleDrawer()"><i class="fas fa-user-plus"></i> Register</div>
+    `;
+    document.getElementById('chatToggle').classList.add('hidden');
+    document.getElementById('chatWindow').classList.add('hidden');
+    chatOpen=false;
+  }
+}
+
+function setActiveNav(page){
+  const pages=['home','events','map','chatbot','admin','profile'];
+  pages.forEach(p=>{
+    const el=document.getElementById('nl-'+p);
+    const dl=document.getElementById('dl-'+p);
+    if(el){el.classList.toggle('active',p===page)}
+    if(dl){dl.classList.toggle('active',p===page)}
+  });
+}
+
+function toggleDrawer(){
+  drawerOpen=!drawerOpen;
+  document.getElementById('mobileDrawer').classList.toggle('open',drawerOpen);
+  document.getElementById('drawerOverlay').classList.toggle('show',drawerOpen);
+  document.body.style.overflow=drawerOpen?'hidden':'';
+}
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+function navigate(page,data=null){
+  if((currentPage==='pending'||currentPage==='rejected')&&page!=='pending'&&page!=='rejected') stopPendingPolling();
+  if(page==='eventDetail' && data){currentEvent=data}
+  currentPage=page;
+  setActiveNav(page);
+  render(page);
+  window.scrollTo(0,0);
+  updateNav();
+}
+
+function render(page){
+  const root=document.getElementById('appRoot');
+  root.innerHTML='';
+  switch(page){
+    case 'home': root.innerHTML=renderHome(); attachHomeEvents(); break;
+    case 'events': root.innerHTML=renderEvents(); attachEventsEvents(); break;
+    case 'map': root.innerHTML=renderMap(); initMap(); break;
+    case 'chatbot': navigate('home'); openChat(); return;
+    case 'eventDetail': root.innerHTML=renderEventDetail(currentEvent); attachDetailEvents(); break;
+    case 'profile': root.innerHTML=renderProfile(); break;
+    case 'admin': window.open('admin.html','_blank'); navigate('home'); return;
+    case 'signin': root.innerHTML=renderSignIn(); attachSignInEvents(); break;
+    case 'signup': root.innerHTML=renderSignUp(); attachSignUpEvents(); break;
+    case 'pending': root.innerHTML=renderPending(); break;
+    case 'rejected': root.innerHTML=renderRejected(); break;
+    default: root.innerHTML=renderHome(); attachHomeEvents();
+  }
+}
+
+/* ============================================================
+   HOME PAGE
+============================================================ */
+function renderHome(){
+  const featuredEvents = EVENTS.filter(e=>e.isNew).slice(0,6);
+  const upcomingEvents = EVENTS.sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,3);
+  return `
+<div class="page no-pad">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-gradient"></div>
+    <div class="hero-particles" id="heroParticles"></div>
+    <div class="container">
+      <div class="hero-content fade-in">
+        <div class="hero-tag"><i class="fas fa-star"></i> Lebanon's #1 Sports Platform 2026</div>
+        <h1>Discover Lebanon's <span class="accent">Greatest</span> Sports Events</h1>
+        <p>From the slopes of Faraya to the shores of Sidon — explore 22 world-class sporting events across all 8 Lebanese mohafazat.</p>
+        <div class="hero-btns">
+          <button class="btn btn-primary btn-lg" onclick="navigate('events')">
+            <i class="fas fa-calendar-alt"></i> Explore Events
+          </button>
+          <button class="btn btn-outline btn-lg" onclick="navigate('map')">
+            <i class="fas fa-map-marked-alt"></i> View on Map
+          </button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><span class="n">22</span><span class="l">Events</span></div>
+          <div class="hero-stat"><span class="n">8</span><span class="l">Regions</span></div>
+          <div class="hero-stat"><span class="n">12+</span><span class="l">Sports</span></div>
+          <div class="hero-stat"><span class="n">2026</span><span class="l">Season</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-img-grid">
+        <div class="hero-img-cell tall"><img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&q=80" alt="Football"></div>
+        <div class="hero-img-cell"><img src="https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&q=80" alt="Skiing"></div>
+        <div class="hero-img-cell"><img src="https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=400&q=80" alt="Running"></div>
+        <div class="hero-img-cell tall"><img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&q=80" alt="Basketball"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED EVENTS -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header flex justify-between items-center">
+        <div>
+          <div class="section-tag"><i class="fas fa-fire"></i> Featured</div>
+          <h2 class="section-title">New & Exciting Events</h2>
+          <p class="section-sub">Don't miss these freshly announced sporting events across Lebanon.</p>
+        </div>
+        <button class="btn btn-outline" onclick="navigate('events')" style="flex-shrink:0">View All <i class="fas fa-arrow-right"></i></button>
+      </div>
+      <div class="events-grid">
+        ${featuredEvents.map(e=>renderEventCard(e)).join('')}
+      </div>
+    </div>
+  </section>
+
+  <!-- MOHAFAZAT HIGHLIGHTS -->
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-header text-center">
+        <div class="section-tag"><i class="fas fa-map-marker-alt"></i> By Region</div>
+        <h2 class="section-title">Events Across Lebanon</h2>
+        <p class="section-sub" style="margin:0 auto">Sports events in every corner of this beautiful country.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-top:2rem">
+        ${MOHAFAZAT.map(m=>{
+          const count=EVENTS.filter(e=>e.mohafaza===m.name).length;
+          return `<div onclick="navigate('events');setTimeout(()=>{setMohafazaFilter('${m.name}')},100)"
+            style="background:#fff;border:1.5px solid var(--gray-200);border-radius:var(--radius-lg);
+            overflow:hidden;cursor:pointer;transition:var(--transition-slow);text-align:center;"
+            onmouseover="this.style.borderColor='var(--primary)';this.style.transform='translateY(-3px)';this.style.boxShadow='var(--shadow-md)'"
+            onmouseout="this.style.borderColor='var(--gray-200)';this.style.transform='';this.style.boxShadow=''">
+            <div style="position:relative;height:110px;overflow:hidden;">
+              <img src="${m.image}" alt="${m.name}" loading="lazy"
+                style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease;"
+                onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+              <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.15),rgba(0,0,0,.5));"></div>
+              <div style="position:absolute;bottom:.5rem;left:50%;transform:translateX(-50%);
+                background:rgba(255,255,255,.18);backdrop-filter:blur(4px);
+                border-radius:var(--radius-full);padding:.15rem .55rem;font-size:1.4rem;line-height:1.6;">${m.flag}</div>
+            </div>
+            <div style="padding:.75rem 1rem .9rem;">
+              <div style="font-weight:700;color:var(--gray-900);font-size:.95rem">${m.name}</div>
+              <div style="font-size:.78rem;color:var(--primary);font-weight:600;margin-top:.2rem">${count} event${count!==1?'s':''}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </section>
+
+  <!-- UPCOMING EVENTS -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag"><i class="fas fa-clock"></i> Coming Soon</div>
+        <h2 class="section-title">Upcoming Events</h2>
+        <p class="section-sub">Mark your calendar for these next sporting occasions.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        ${upcomingEvents.map(e=>`
+          <div onclick="navigate('eventDetail','${e.id}')" style="display:flex;align-items:center;gap:1.5rem;
+            background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius-lg);
+            padding:1rem 1.5rem;cursor:pointer;transition:var(--transition);"
+            onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.borderColor='var(--primary)'"
+            onmouseout="this.style.boxShadow='';this.style.borderColor='var(--gray-200)'">
+            <div style="background:var(--primary-light);border-radius:var(--radius);
+              padding:.75rem 1rem;text-align:center;flex-shrink:0;min-width:64px">
+              <div style="font-size:1.4rem;font-weight:800;color:var(--primary)">
+                ${new Date(e.date).getDate()}
+              </div>
+              <div style="font-size:.7rem;font-weight:600;color:var(--primary);text-transform:uppercase">
+                ${new Date(e.date).toLocaleString('en',{month:'short'})} ${new Date(e.date).getFullYear()}
+              </div>
+            </div>
+            <div style="width:52px;height:52px;border-radius:var(--radius-sm);overflow:hidden;flex-shrink:0">
+              <img src="${e.image}" style="width:100%;height:100%;object-fit:cover" alt="${e.title}">
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;color:var(--gray-900);margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                ${e.title}
+              </div>
+              <div style="font-size:.82rem;color:var(--gray-500);display:flex;align-items:center;gap:1rem">
+                <span><i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> ${e.location.split(',')[0]}</span>
+                <span><i class="fas fa-running" style="color:var(--primary)"></i> ${e.sport}</span>
+              </div>
+            </div>
+            <div class="badge badge-sport" style="flex-shrink:0">${e.sportIcon} ${e.sport}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BANNER -->
+  <section class="section section-alt">
+    <div class="container">
+      <div style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+        border-radius:var(--radius-xl);padding:3rem;text-align:center;color:#fff;position:relative;overflow:hidden">
+        <div style="position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1200&q=80')
+          center/cover;opacity:.1"></div>
+        <div style="position:relative;z-index:1">
+          <div style="font-size:2.5rem;margin-bottom:1rem">🏆</div>
+          <h2 style="font-size:2rem;font-weight:800;margin-bottom:.75rem">Ready to Join Lebanon's Sports Community?</h2>
+          <p style="font-size:1rem;color:rgba(255,255,255,.8);margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto">
+            Register now to access all events, interact with our AI assistant, and never miss a sporting moment.
+          </p>
+          <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-lg" style="background:#fff;color:var(--primary);font-weight:700" onclick="navigate('signup')">
+              <i class="fas fa-user-plus"></i> Create Account
+            </button>
+            <button class="btn btn-lg btn-outline" style="border-color:rgba(255,255,255,.4);color:#fff" onclick="navigate('events')">
+              <i class="fas fa-calendar"></i> Browse Events
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  ${renderFooter()}
+</div>`;
+}
+
+function attachHomeEvents(){
+  // Particles
+  const pc = document.getElementById('heroParticles');
+  if(pc){
+    for(let i=0;i<30;i++){
+      const p=document.createElement('div');
+      p.className='particle';
+      p.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;
+        animation-delay:${Math.random()*4}s;animation-duration:${3+Math.random()*4}s;
+        opacity:${.2+Math.random()*.5}`;
+      pc.appendChild(p);
+    }
+  }
+  // Scroll shadow
+  window.onscroll=()=>{
+    document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>10);
+  };
+  // Delegate event card clicks
+  document.querySelectorAll('[data-event-id]').forEach(el=>{
+    el.addEventListener('click',()=>navigate('eventDetail',el.dataset.eventId));
+  });
+}
+
+/* ============================================================
+   EVENT CARD RENDERER
+============================================================ */
+function renderEventCard(e){
+  const fav = Session.isFav(e.id);
+  const user = Session.getUser();
+  return `
+<div class="event-card fade-in" data-event-id="${e.id}" onclick="navigate('eventDetail','${e.id}')">
+  <div class="event-card-img">
+    <img src="${e.image}" alt="${e.title}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80'">
+    <div class="event-card-badge">
+      <span class="badge badge-sport">${e.sportIcon} ${e.sport}</span>
+      <span class="badge badge-region">${e.mohafaza}</span>
+      ${e.isNew?'<span class="badge badge-new">New</span>':''}
+    </div>
+    ${user?`<button class="event-card-fav ${fav?'active':''}" onclick="event.stopPropagation();toggleFavorite('${e.id}',this)">
+      <i class="${fav?'fas':'far'} fa-heart"></i>
+    </button>`:''}
+  </div>
+  <div class="event-card-body">
+    <div class="event-card-meta">
+      <span class="event-date-pill">
+        <i class="fas fa-calendar"></i>
+        ${formatDate(e.date)} • ${formatTime(e.time)}
+      </span>
+    </div>
+    <h3 class="event-card-title">${e.title}</h3>
+    <p class="event-card-desc">${e.description}</p>
+<div class="event-card-footer">
+      <div class="event-location">
+        <i class="fas fa-map-marker-alt"></i>
+        ${e.location.split(',')[0]}
+        ${e.priceDisplay ? `<span class="event-price">${e.priceDisplay}</span>` : ''}
+      </div>
+      <div class="event-card-btn">
+        View Details <i class="fas fa-arrow-right"></i>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+function toggleFavorite(id, btn){
+  Session.toggleFav(id);
+  const fav=Session.isFav(id);
+  btn.classList.toggle('active',fav);
+  btn.innerHTML=`<i class="${fav?'fas':'far'} fa-heart"></i>`;
+  toast(fav?'Added to favorites ❤️':'Removed from favorites','info',2000);
+}
+
+/* ============================================================
+   EVENTS PAGE
+============================================================ */
+function renderEvents(){
+  const filtered = getFilteredEvents();
+  const byMohafaza = MOHAFAZAT.map(m=>({
+    ...m,
+    events: filtered.filter(e=>e.mohafaza===m.name)
+  })).filter(m=>m.events.length>0);
+
+  return `
+<div class="page">
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag"><i class="fas fa-calendar-alt"></i> All Events</div>
+        <h1 class="section-title">Sports Events 2026 — 2027</h1>
+        <p class="section-sub">Explore all ${EVENTS.length} professional sports events across Lebanon's 8 mohafazat.</p>
+      </div>
+      
+      <!-- FILTER BAR -->
+      <div class="filter-bar" id="filterBar">
+        <span class="filter-chip active" data-filter="all" onclick="setMohafazaFilter('All',this)">
+          <span class="chip-dot"></span> All Regions
+        </span>
+        ${MOHAFAZAT.map(m=>`
+          <span class="filter-chip" data-filter="${m.name}" onclick="setMohafazaFilter('${m.name}',this)">
+            ${m.flag} ${m.name}
+          </span>
+        `).join('')}
+        <div class="search-wrap" style="margin-left:auto">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search events…" value="${searchQuery}"
+            oninput="searchQuery=this.value;refreshEvents()">
+        </div>
+      </div>
+      
+      <!-- SPORT FILTER -->
+      <div class="filter-bar" id="sportFilter" style="margin-top:-.5rem">
+        <span style="font-size:.8rem;font-weight:600;color:var(--gray-500)">Sport:</span>
+        <span class="filter-chip ${filterSport==='All'?'active':''}" onclick="setSportFilter('All',this)">All</span>
+        ${SPORT_TYPES.map(s=>`
+          <span class="filter-chip ${filterSport===s?'active':''}" onclick="setSportFilter('${s}',this)">${s}</span>
+        `).join('')}
+      </div>
+
+      <!-- RESULTS COUNT -->
+      <div style="margin-bottom:1.5rem;font-size:.875rem;color:var(--gray-500)">
+        Showing <strong>${filtered.length}</strong> event${filtered.length!==1?'s':''} 
+        ${filterMohafaza!=='All'?`in <strong>${filterMohafaza}</strong>`:''}
+        ${filterSport!=='All'?`· <strong>${filterSport}</strong>`:''}
+      </div>
+
+      <!-- EVENTS BY MOHAFAZA -->
+      <div id="eventsContainer">
+        ${byMohafaza.length ? byMohafaza.map(m=>`
+          <div class="mohafaza-section">
+            <div class="mohafaza-header">
+              <div class="mohafaza-flag">${m.flag}</div>
+              <div>
+                <h2 class="mohafaza-title">${m.name}</h2>
+              </div>
+              <span class="mohafaza-count">${m.events.length} event${m.events.length!==1?'s':''}</span>
+            </div>
+            <div class="events-grid">
+              ${m.events.map(e=>renderEventCard(e)).join('')}
+            </div>
+          </div>
+        `).join('') : `
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-search"></i></div>
+            <h3>No events found</h3>
+            <p>Try adjusting your filters or search query.</p>
+            <button class="btn btn-primary" style="margin-top:1rem" onclick="clearFilters()">Clear Filters</button>
+          </div>
+        `}
+      </div>
+    </div>
+  </section>
+  ${renderFooter()}
+</div>`;
+}
+
+function attachEventsEvents(){
+  document.querySelectorAll('[data-event-id]').forEach(el=>{
+    el.addEventListener('click',function(){
+      const id=this.dataset.eventId;
+      if(id) navigate('eventDetail',id);
+    });
+  });
+}
+
+function getFilteredEvents(){
+  return EVENTS.filter(e=>{
+    const matchMohafaza = filterMohafaza==='All' || e.mohafaza===filterMohafaza;
+    const matchSport = filterSport==='All' || e.sport===filterSport;
+    const matchSearch = !searchQuery || 
+      e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      e.sport.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      e.location.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchMohafaza && matchSport && matchSearch;
+  });
+}
+
+function setMohafazaFilter(val, el){
+  filterMohafaza=val;
+  document.querySelectorAll('#filterBar .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el) el.classList.add('active');
+  refreshEvents();
+}
+
+function setSportFilter(val, el){
+  filterSport=val;
+  document.querySelectorAll('#sportFilter .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el) el.classList.add('active');
+  refreshEvents();
+}
+
+function clearFilters(){
+  filterMohafaza='All';filterSport='All';searchQuery='';
+  navigate('events');
+}
+
+function refreshEvents(){
+  if(currentPage!=='events') return;
+  const filtered=getFilteredEvents();
+  const byMohafaza=MOHAFAZAT.map(m=>({...m,events:filtered.filter(e=>e.mohafaza===m.name)})).filter(m=>m.events.length>0);
+  const cont=document.getElementById('eventsContainer');
+  if(!cont) return;
+  cont.innerHTML = byMohafaza.length ? byMohafaza.map(m=>`
+    <div class="mohafaza-section">
+      <div class="mohafaza-header">
+        <div class="mohafaza-flag">${m.flag}</div>
+        <div><h2 class="mohafaza-title">${m.name}</h2></div>
+        <span class="mohafaza-count">${m.events.length} event${m.events.length!==1?'s':''}</span>
+      </div>
+      <div class="events-grid">${m.events.map(e=>renderEventCard(e)).join('')}</div>
+    </div>
+  `).join('') : `
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fas fa-search"></i></div>
+      <h3>No events found</h3>
+      <p>Try adjusting your filters or search query.</p>
+      <button class="btn btn-primary" style="margin-top:1rem" onclick="clearFilters()">Clear Filters</button>
+    </div>
+  `;
+  document.querySelectorAll('[data-event-id]').forEach(el=>{
+    el.addEventListener('click',function(){navigate('eventDetail',this.dataset.eventId)});
+  });
+}
+
+/* ============================================================
+   EVENT DETAIL PAGE
+============================================================ */
+function renderEventDetail(idOrObj){
+  const e = typeof idOrObj==='string' ? EVENTS.find(ev=>ev.id===idOrObj) : EVENTS.find(ev=>ev.id===idOrObj);
+  if(!e) return '<div class="page"><div class="container"><h2 style="margin-top:4rem">Event not found</h2></div></div>';
+  const related=EVENTS.filter(ev=>ev.mohafaza===e.mohafaza && ev.id!==e.id).slice(0,3);
+  const user=Session.getUser();
+  return `
+<div class="page no-pad">
+  <div class="detail-hero">
+    <img src="${e.image}" alt="${e.title}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80'">
+    <div class="detail-hero-overlay"></div>
+    <div class="detail-hero-back" onclick="history.go(-1)||navigate('events')">
+      <i class="fas fa-arrow-left"></i> Back
+    </div>
+    <div class="detail-hero-content container">
+      <div class="detail-sport-badge"><i class="fas fa-trophy"></i> ${e.sport}</div>
+      <h1 class="detail-hero-title">${e.title}</h1>
+      <div class="detail-hero-loc">
+        <i class="fas fa-map-marker-alt"></i>
+        ${e.location}
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-body">
+    <div class="container">
+      <div class="detail-grid">
+        <!-- MAIN -->
+        <div class="detail-main">
+          <div class="detail-card">
+            <div class="detail-card-title">About This Event</div>
+            <p class="detail-desc">${e.description}</p>
+          </div>
+          
+          <div class="detail-card">
+            <div class="detail-card-title">Event Details</div>
+            <div class="detail-info-grid">
+              <div class="detail-info-item">
+                <span class="label">Date</span>
+                <span class="value"><i class="fas fa-calendar" style="color:var(--primary)"></i> ${formatDate(e.date)}</span>
+              </div>
+              <div class="detail-info-item">
+                <span class="label">Time</span>
+                <span class="value"><i class="fas fa-clock" style="color:var(--primary)"></i> ${formatTime(e.time)}</span>
+              </div>
+              <div class="detail-info-item">
+                <span class="label">Sport</span>
+                <span class="value">${e.sportIcon} ${e.sport}</span>
+              </div>
+              <div class="detail-info-item">
+                <span class="label">Region</span>
+                <span class="value">${MOHAFAZAT.find(m=>m.name===e.mohafaza)?.flag} ${e.mohafaza}</span>
+              </div>
+              <div class="detail-info-item">
+                <span class="label">Capacity</span>
+                <span class="value"><i class="fas fa-users" style="color:var(--primary)"></i> ${e.capacity.toLocaleString()}</span>
+              </div>
+              <div class="detail-info-item">
+                <span class="label">Organizer</span>
+                <span class="value">${e.organizer}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-card" style="padding:0;overflow:hidden">
+            <div style="padding:1rem 1.5rem .75rem;border-bottom:1px solid var(--gray-100)">
+              <div class="detail-card-title" style="margin:0">Location Map</div>
+            </div>
+            <div id="detailMap" class="detail-map" style="border-radius:0;border:none"></div>
+          </div>
+
+          ${related.length?`
+          <div class="detail-card">
+            <div class="detail-card-title">More in ${e.mohafaza}</div>
+            <div style="display:flex;flex-direction:column;gap:.75rem">
+              ${related.map(r=>`
+                <div onclick="navigate('eventDetail','${r.id}')" style="display:flex;gap:.75rem;cursor:pointer;
+                  padding:.6rem;border-radius:var(--radius-sm);transition:var(--transition);"
+                  onmouseover="this.style.background='var(--gray-50)'"
+                  onmouseout="this.style.background=''">
+                  <div style="width:56px;height:56px;border-radius:var(--radius-sm);overflow:hidden;flex-shrink:0">
+                    <img src="${r.image}" style="width:100%;height:100%;object-fit:cover" alt="${r.title}">
+                  </div>
+                  <div>
+                    <div style="font-weight:700;font-size:.9rem;color:var(--gray-900);margin-bottom:.2rem">${r.title}</div>
+                    <div style="font-size:.78rem;color:var(--gray-500)">${formatDate(r.date)} · ${r.sport}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          `:''}
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="detail-sidebar">
+          <div class="detail-register-card">
+            <h3>🎟️ Join This Event</h3>
+            <p>Reserve your spot at ${e.title} and be part of Lebanon's biggest sports moments.</p>
+            ${(()=>{
+              if(!user) return `<button class="btn btn-lg" style="background:#fff;color:var(--primary);width:100%;justify-content:center;font-weight:700" onclick="navigate('signin')"><i class="fas fa-sign-in-alt"></i> Sign In to Register</button>`;
+              const regInfo=Session.getRegistrationStatus(e.id);
+              if(!regInfo) return `<button class="btn btn-lg" style="background:#fff;color:var(--primary);width:100%;justify-content:center;font-weight:700" onclick="registerForEvent('${e.id}')"><i class="fas fa-ticket-alt"></i> Register Now</button>`;
+              if(regInfo.status==='approved') return `<button class="btn btn-lg" style="background:#22c55e;color:#fff;width:100%;justify-content:center;font-weight:700;cursor:default" disabled><i class="fas fa-check-circle"></i> Registration Approved</button><p style="text-align:center;font-size:.8rem;color:rgba(255,255,255,.85);margin-top:.5rem">Your spot is confirmed!</p>`;
+              if(regInfo.status==='rejected') return `<button class="btn btn-lg" style="background:#ef4444;color:#fff;width:100%;justify-content:center;font-weight:700;cursor:default" disabled><i class="fas fa-times-circle"></i> Registration Rejected</button><p style="text-align:center;font-size:.8rem;color:rgba(255,255,255,.85);margin-top:.5rem">Contact support for more info.</p>`;
+              return `<button class="btn btn-lg" style="background:#f59e0b;color:#fff;width:100%;justify-content:center;font-weight:700;cursor:default" disabled><i class="fas fa-clock"></i> Pending Approval</button><p style="text-align:center;font-size:.8rem;color:rgba(255,255,255,.85);margin-top:.5rem">Awaiting admin review.</p>`;
+            })()}
+            <div class="detail-share">
+              <button class="share-btn" title="Share on Facebook"><i class="fab fa-facebook-f"></i></button>
+              <button class="share-btn" title="Share on Twitter"><i class="fab fa-twitter"></i></button>
+              <button class="share-btn" title="Share on WhatsApp"><i class="fab fa-whatsapp"></i></button>
+              <button class="share-btn" title="Copy link" onclick="toast('Link copied!','success',2000)"><i class="fas fa-link"></i></button>
+            </div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-card-title">Event Info</div>
+            <div style="display:flex;flex-direction:column;gap:.85rem">
+              <div style="display:flex;align-items:center;gap:.75rem">
+                <div style="width:36px;height:36px;background:var(--primary-light);border-radius:var(--radius-sm);
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="fas fa-calendar" style="color:var(--primary);font-size:.85rem"></i>
+                </div>
+                <div>
+                  <div style="font-size:.75rem;color:var(--gray-400);font-weight:600;text-transform:uppercase">Date</div>
+                  <div style="font-size:.88rem;font-weight:600;color:var(--gray-800)">${formatDate(e.date)}</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:.75rem">
+                <div style="width:36px;height:36px;background:var(--primary-light);border-radius:var(--radius-sm);
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="fas fa-clock" style="color:var(--primary);font-size:.85rem"></i>
+                </div>
+                <div>
+                  <div style="font-size:.75rem;color:var(--gray-400);font-weight:600;text-transform:uppercase">Kickoff</div>
+                  <div style="font-size:.88rem;font-weight:600;color:var(--gray-800)">${formatTime(e.time)}</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:.75rem">
+                <div style="width:36px;height:36px;background:var(--primary-light);border-radius:var(--radius-sm);
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="fas fa-map-pin" style="color:var(--primary);font-size:.85rem"></i>
+                </div>
+                <div>
+                  <div style="font-size:.75rem;color:var(--gray-400);font-weight:600;text-transform:uppercase">Venue</div>
+                  <div style="font-size:.88rem;font-weight:600;color:var(--gray-800)">${e.location}</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:.75rem">
+                <div style="width:36px;height:36px;background:var(--primary-light);border-radius:var(--radius-sm);
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="fas fa-users" style="color:var(--primary);font-size:.85rem"></i>
+                </div>
+                <div>
+                  <div style="font-size:.75rem;color:var(--gray-400);font-weight:600;text-transform:uppercase">Capacity</div>
+                  <div style="font-size:.88rem;font-weight:600;color:var(--gray-800)">${e.capacity.toLocaleString()} attendees</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-card-title">Organizer</div>
+            <div class="organizer-card">
+              <div class="organizer-avatar">
+                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(e.organizer)}&background=1a56db&color=fff&size=48" alt="${e.organizer}">
+              </div>
+              <div>
+                <div class="organizer-name">${e.organizer}</div>
+                <div class="organizer-role">Official Organizer</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  ${renderFooter()}
+</div>`;
+}
+
+function attachDetailEvents(){
+  // Detail map
+  setTimeout(()=>{
+    const e = EVENTS.find(ev=>ev.id===currentEvent);
+    if(!e) return;
+    const detailMap = document.getElementById('detailMap');
+    if(!detailMap) return;
+    const dm = L.map('detailMap',{zoomControl:true,scrollWheelZoom:false}).setView(e.coordinates,13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© OpenStreetMap',maxZoom:19
+    }).addTo(dm);
+    const icon=L.divIcon({
+      className:'',
+      html:`<div class="custom-marker"><i class="fas fa-trophy"></i></div>`,
+      iconSize:[36,36],iconAnchor:[18,36]
+    });
+    L.marker(e.coordinates,{icon}).addTo(dm)
+      .bindPopup(`<div style="padding:.5rem;font-weight:600">${e.title}</div>`)
+      .openPopup();
+  },200);
+}
+
+async function registerForEvent(id){
+  const user=Session.getUser();
+  if(!user){navigate('signin');return;}
+  const e=EVENTS.find(ev=>ev.id===id);
+  if(Session.isRegistered(id)){
+    toast(`You're already registered for "${e.title}"!`,'info',3000);
+    return;
+  }
+  try{
+    const res=await fetch(`${API}/api/register-for-event`,{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({event_ref:id,event_title:e.title,name:user.name,email:user.email})
+    });
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Registration failed');
+    await _loadUserRegs();
+    toast(`✅ Registered for "${e.title}"! Awaiting admin approval.`,'success',4000);
+    navigate('eventDetail',id);
+  }catch(err){
+    toast(err.message,'error',4000);
+  }
+}
+
+/* ============================================================
+   MAP PAGE
+============================================================ */
+function renderMap(){
+  return `
+<div class="page no-pad" style="padding-top:var(--nav-h)">
+  <div class="map-page">
+    <div class="map-sidebar">
+      <div class="map-sidebar-header">
+        <div class="map-sidebar-title">📍 Events on Map</div>
+        <div class="map-search">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search events…" id="mapSearch" oninput="filterMapList(this.value)">
+        </div>
+      </div>
+      <div class="map-event-list" id="mapEventList">
+        ${EVENTS.map(e=>`
+          <div class="map-event-item" id="mei-${e.id}" onclick="focusMapEvent('${e.id}')">
+            <div class="map-event-thumb">
+              <img src="${e.image}" alt="${e.title}" loading="lazy">
+            </div>
+            <div>
+              <div class="map-event-name">${e.title}</div>
+              <div class="map-event-sport">${e.sportIcon} ${e.sport}</div>
+              <div class="map-event-loc"><i class="fas fa-map-marker-alt"></i>${e.location.split(',')[0]}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div id="mainMap"></div>
+  </div>
+</div>`;
+}
+
+function initMap(){
+  setTimeout(()=>{
+    if(map){map.remove();map=null;}
+    map = L.map('mainMap',{zoomControl:true}).setView([33.8547,35.8623],8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© <a href="https://www.openstreetmap.org">OpenStreetMap</a>',
+      maxZoom:19
+    }).addTo(map);
+    markers=[];
+    EVENTS.forEach(e=>{
+      const icon=L.divIcon({
+        className:'',
+        html:`<div class="custom-marker" title="${e.title}">
+          <span style="font-size:1rem">${e.sportIcon}</span>
+        </div>`,
+        iconSize:[36,36],iconAnchor:[18,36]
+      });
+      const m=L.marker(e.coordinates,{icon}).addTo(map);
+      const popupContent=`
+        <div>
+          <img src="${e.image}" class="map-popup-img" alt="${e.title}">
+          <div class="map-popup-body">
+            <div class="map-popup-sport">${e.sportIcon} ${e.sport}</div>
+            <div class="map-popup-title">${e.title}</div>
+            <div class="map-popup-date">
+              <i class="fas fa-calendar"></i>${formatDate(e.date)} · ${formatTime(e.time)}
+            </div>
+            <button class="map-popup-btn" onclick="navigate('eventDetail','${e.id}')">
+              View Details <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>`;
+      m.bindPopup(popupContent,{maxWidth:260});
+      m.on('click',()=>{
+        document.querySelectorAll('.map-event-item').forEach(el=>el.classList.remove('active'));
+        const si=document.getElementById('mei-'+e.id);
+        if(si){si.classList.add('active');si.scrollIntoView({behavior:'smooth',block:'nearest'})}
+      });
+      markers.push({id:e.id,marker:m,event:e});
+    });
+  },150);
+}
+
+function focusMapEvent(id){
+  const entry=markers.find(m=>m.id===id);
+  if(!entry||!map) return;
+  map.setView(entry.event.coordinates,14,{animate:true});
+  entry.marker.openPopup();
+  document.querySelectorAll('.map-event-item').forEach(el=>el.classList.remove('active'));
+  const si=document.getElementById('mei-'+id);
+  if(si) si.classList.add('active');
+}
+
+function filterMapList(q){
+  const lower=q.toLowerCase();
+  EVENTS.forEach(e=>{
+    const el=document.getElementById('mei-'+e.id);
+    if(!el) return;
+    const match=!q||e.title.toLowerCase().includes(lower)||e.sport.toLowerCase().includes(lower)||e.location.toLowerCase().includes(lower);
+    el.style.display=match?'flex':'none';
+  });
+}
+
+/* ============================================================
+   CHAT
+============================================================ */
+function openChat(){
+  if(!Session.getUser()){navigate('signin');toast('Please sign in to use the AI Assistant','info');return;}
+  const win=document.getElementById('chatWindow');
+  chatOpen=true;
+  win.classList.remove('hidden');
+  document.getElementById('chatBadge').classList.add('hidden');
+  if(!chatInitialized){
+    initChat();
+    chatInitialized=true;
+  }
+}
+
+function toggleChat(){
+  if(!Session.getUser()){navigate('signin');toast('Please sign in to use the AI Assistant','info');return;}
+  chatOpen=!chatOpen;
+  const win=document.getElementById('chatWindow');
+  if(chatOpen){
+    win.classList.remove('hidden');
+    document.getElementById('chatBadge').classList.add('hidden');
+    if(!chatInitialized){initChat();chatInitialized=true;}
+    setTimeout(()=>document.getElementById('chatInput')?.focus(),100);
+  } else {
+    win.classList.add('hidden');
+  }
+}
+
+function initChat(){
+  const msgs=document.getElementById('chatMessages');
+  msgs.innerHTML='';
+  addBotMsg('👋 Hello! I\'m **SportBot**, your AI sports assistant for Lebanon. I can help you find events, get information about sports, venues, and much more. What would you like to know?');
+  setSuggestions(['Upcoming events','Football events','Events in Beirut','How to register','Skiing events']);
+}
+
+function addBotMsg(text){
+  const msgs=document.getElementById('chatMessages');
+  const div=document.createElement('div');
+  div.className='chat-message bot';
+  div.innerHTML=`
+    <div class="chat-msg-avatar"><i class="fas fa-robot"></i></div>
+    <div class="chat-bubble">
+      ${text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}
+      <span class="chat-time">${timeStamp()}</span>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function addUserMsg(text){
+  const user=Session.getUser();
+  const msgs=document.getElementById('chatMessages');
+  const div=document.createElement('div');
+  div.className='chat-message user';
+  div.innerHTML=`
+    <div class="chat-bubble">
+      ${text}
+      <span class="chat-time">${timeStamp()}</span>
+    </div>
+    <div class="chat-msg-avatar user-av">${getInitials(user?.name||'U')}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function showTyping(){
+  const msgs=document.getElementById('chatMessages');
+  const d=document.createElement('div');
+  d.className='chat-message bot';d.id='typing-indicator';
+  d.innerHTML=`
+    <div class="chat-msg-avatar"><i class="fas fa-robot"></i></div>
+    <div class="chat-typing"><span></span><span></span><span></span></div>`;
+  msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;
+}
+
+function removeTyping(){
+  document.getElementById('typing-indicator')?.remove();
+}
+
+function setSuggestions(suggestions){
+  const cont=document.getElementById('chatSuggestions');
+  cont.innerHTML=suggestions.map(s=>`
+    <button class="chat-suggest-btn" onclick="sendChatMsg('${s}')">${s}</button>
+  `).join('');
+}
+
+function sendChat(){
+  const input=document.getElementById('chatInput');
+  const msg=input.value.trim();
+  if(!msg) return;
+  input.value='';
+  sendChatMsg(msg);
+}
+
+function sendChatMsg(msg){
+  addUserMsg(msg);
+  showTyping();
+  const delay=800+Math.random()*800;
+  setTimeout(()=>{
+    removeTyping();
+    const reply=getBotReply(msg);
+    addBotMsg(reply);
+    // Dynamic suggestions based on context
+    const m=msg.toLowerCase();
+    if(m.includes('football')) setSuggestions(['When is the match?','Beirut Stadium info','Register for event','Other sports']);
+    else if(m.includes('ski')) setSuggestions(['Faraya resort info','Winter events','Best time to visit','Register']);
+    else if(m.includes('map')) setSuggestions(['Events in Beirut','South Lebanon events','Baalbek events','All regions']);
+    else setSuggestions(['Upcoming events','All sports','Map view','How to register']);
+  },delay);
+}
+
+/* ============================================================
+   PROFILE PAGE
+============================================================ */
+function renderProfile(){
+  const user=Session.getUser();
+  if(!user){navigate('signin');return ''}
+  const fav=Session.get('favorites').length;
+  const myRegs=Session.getUserRegistrations();
+  const myEvents=myRegs.map(r=>({reg:r,event:EVENTS.find(ev=>ev.id===r.eventId)||{title:r.eventTitle,image:r.eventImage,sport:r.eventSport,sportIcon:r.eventSportIcon||'🏆',date:r.eventDate,time:r.eventTime,location:r.eventLocation,id:r.eventId}})).filter(x=>x.event);
+  const notifications=Session.getPendingNotifications();
+  // Auto-mark notifications as seen after render
+  setTimeout(()=>notifications.forEach(n=>Session.markNotified(n.id)),2000);
+  return `
+<div class="profile-page">
+  <div class="container">
+    ${notifications.length?`
+    <div style="background:linear-gradient(135deg,#1e40af,#3b82f6);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1.5rem;color:#fff">
+      <div style="font-weight:700;font-size:.95rem;margin-bottom:.5rem"><i class="fas fa-bell"></i> New Updates on Your Registrations</div>
+      ${notifications.map(n=>`
+        <div style="display:flex;align-items:center;gap:.6rem;padding:.4rem 0;border-top:1px solid rgba(255,255,255,.15)">
+          ${n.status==='approved'
+            ?`<i class="fas fa-check-circle" style="color:#4ade80"></i><span style="font-size:.88rem">Your registration for <strong>${n.eventTitle}</strong> has been <strong style="color:#4ade80">approved</strong>!</span>`
+            :`<i class="fas fa-times-circle" style="color:#f87171"></i><span style="font-size:.88rem">Your registration for <strong>${n.eventTitle}</strong> has been <strong style="color:#f87171">rejected</strong>.</span>`}
+        </div>
+      `).join('')}
+    </div>`:''}
+    <div class="profile-cover">
+      <div class="profile-cover-img"></div>
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar">${getInitials(user.name)}</div>
+      </div>
+    </div>
+    <div class="profile-header">
+      <div>
+        <h1 class="profile-name">${user.name}</h1>
+        <p class="profile-email">${user.email}</p>
+        ${user.isAdmin?`<span class="status-badge status-approved" style="margin-top:.4rem;display:inline-flex"><i class="fas fa-shield-alt"></i> Admin</span>`:''}
+      </div>
+      <button class="btn btn-outline" onclick="doLogout()">
+        <i class="fas fa-sign-out-alt"></i> Sign Out
+      </button>
+    </div>
+    <div class="profile-grid">
+      <div class="profile-card">
+        <div class="profile-card-title"><i class="fas fa-user"></i> Personal Information</div>
+        <div class="profile-info-row">
+          <span class="label">Full Name</span>
+          <span class="value">${user.name}</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="label">Email Address</span>
+          <span class="value">${user.email}</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="label">Phone</span>
+          <span class="value">${user.phone||'—'}</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="label">City</span>
+          <span class="value">${user.city||'—'}</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="label">Favorite Sport</span>
+          <span class="value">${user.sport||'—'}</span>
+        </div>
+        <div class="profile-info-row">
+          <span class="label">Account Type</span>
+          <span class="value">
+            <span class="status-badge ${user.isAdmin?'status-approved':'status-pending'}">
+              ${user.isAdmin?'<i class="fas fa-shield-alt"></i> Admin':'<i class="fas fa-user"></i> Member'}
+            </span>
+          </span>
+        </div>
+        <div class="profile-info-row">
+          <span class="label">Member Since</span>
+          <span class="value">${formatDate(user.registeredAt)}</span>
+        </div>
+      </div>
+      <div>
+        <div class="profile-card" style="margin-bottom:1.5rem">
+          <div class="profile-card-title"><i class="fas fa-chart-bar"></i> My Stats</div>
+          <div class="stat-grid">
+            <div class="stat-box"><div class="num">${fav}</div><div class="lbl">Favorites</div></div>
+            <div class="stat-box"><div class="num">${myEvents.length}</div><div class="lbl">Registered</div></div>
+            <div class="stat-box"><div class="num">${EVENTS.length}</div><div class="lbl">Events Available</div></div>
+            <div class="stat-box"><div class="num">8</div><div class="lbl">Regions</div></div>
+          </div>
+        </div>
+        <div class="profile-card">
+          <div class="profile-card-title"><i class="fas fa-cog"></i> Quick Actions</div>
+          <div style="display:flex;flex-direction:column;gap:.6rem">
+            <button class="btn btn-outline w-full" style="justify-content:flex-start;gap:.75rem" onclick="navigate('events')">
+              <i class="fas fa-calendar-alt" style="color:var(--primary)"></i> Browse All Events
+            </button>
+            <button class="btn btn-outline w-full" style="justify-content:flex-start;gap:.75rem" onclick="navigate('map')">
+              <i class="fas fa-map" style="color:var(--primary)"></i> Explore Map
+            </button>
+            <button class="btn btn-outline w-full" style="justify-content:flex-start;gap:.75rem" onclick="toggleChat()">
+              <i class="fas fa-robot" style="color:var(--primary)"></i> Open AI Assistant
+            </button>
+            ${user.isAdmin?`<button class="btn btn-primary w-full" style="justify-content:flex-start;gap:.75rem" onclick="navigate('admin')">
+              <i class="fas fa-shield-alt"></i> Admin Panel
+            </button>`:''}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY REGISTERED EVENTS -->
+    <div class="profile-card" style="margin-top:1.5rem">
+      <div class="profile-card-title"><i class="fas fa-ticket-alt"></i> My Registered Events</div>
+      ${myEvents.length===0 ? `
+        <div style="text-align:center;padding:2rem 1rem;color:var(--gray-400)">
+          <i class="fas fa-calendar-times" style="font-size:2.5rem;margin-bottom:.75rem;display:block"></i>
+          <p style="font-weight:600;margin-bottom:.25rem">No events registered yet</p>
+          <p style="font-size:.85rem">Browse events and register to see them here.</p>
+          <button class="btn btn-primary" style="margin-top:1rem" onclick="navigate('events')">
+            <i class="fas fa-search"></i> Browse Events
+          </button>
+        </div>
+      ` : `
+        <div style="display:flex;flex-direction:column;gap:1rem;margin-top:.5rem">
+          ${myEvents.map(({reg,event})=>`
+            <div onclick="navigate('eventDetail','${event.id}')" style="display:flex;gap:1rem;cursor:pointer;
+              border:1px solid var(--gray-100);border-radius:var(--radius-sm);overflow:hidden;
+              transition:var(--transition);background:var(--gray-50);"
+              onmouseover="this.style.background='var(--gray-100)'"
+              onmouseout="this.style.background='var(--gray-50)'">
+              <div style="width:90px;min-width:90px;height:80px;overflow:hidden;flex-shrink:0">
+                <img src="${event.image}" style="width:100%;height:100%;object-fit:cover" alt="${event.title}">
+              </div>
+              <div style="padding:.6rem .75rem .6rem 0;flex:1;min-width:0">
+                <div style="font-weight:700;font-size:.9rem;color:var(--gray-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${event.sportIcon} ${event.title}</div>
+                <div style="font-size:.78rem;color:var(--gray-500);margin:.2rem 0">
+                  <i class="fas fa-calendar-alt" style="color:var(--primary)"></i> ${formatDate(event.date)} · ${event.time}
+                </div>
+                <div style="font-size:.78rem;color:var(--gray-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                  <i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> ${event.location}
+                </div>
+                <div style="margin-top:.35rem">
+                  ${reg.status==='approved'
+                    ?`<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;font-weight:600;background:#dcfce7;color:#166534;border-radius:999px;padding:.15rem .6rem"><i class="fas fa-check-circle"></i> Approved</span>`
+                    :reg.status==='rejected'
+                    ?`<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;font-weight:600;background:#fee2e2;color:#991b1b;border-radius:999px;padding:.15rem .6rem"><i class="fas fa-times-circle"></i> Rejected</span>`
+                    :`<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;font-weight:600;background:#fef3c7;color:#92400e;border-radius:999px;padding:.15rem .6rem"><i class="fas fa-clock"></i> Pending</span>`}
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `}
+    </div>
+  </div>
+  ${renderFooter()}
+</div>`;
+}
+
+/* ============================================================
+   ADMIN PAGE
+============================================================ */
+function renderAdmin(){
+  const user=Session.getUser();
+  if(!user||!user.isAdmin){navigate('home');return ''}
+  const allUsers=Session.get('users').filter(u=>!u.isAdmin);
+  const pending=allUsers.filter(u=>u.status==='pending');
+  const approved=allUsers.filter(u=>u.status==='approved');
+  const rejected=allUsers.filter(u=>u.status==='rejected');
+  return `
+<div class="admin-panel">
+  <div class="container">
+    <div class="admin-header">
+      <h1>⚙️ Admin Panel</h1>
+      <p>Manage user registrations and approvals.</p>
+    </div>
+    
+    <!-- STATS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:2rem">
+      <div style="background:#fff;border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.25rem;text-align:center">
+        <div style="font-size:2rem;font-weight:800;color:var(--accent)">${pending.length}</div>
+        <div style="font-size:.83rem;color:var(--gray-500)">Pending</div>
+      </div>
+      <div style="background:#fff;border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.25rem;text-align:center">
+        <div style="font-size:2rem;font-weight:800;color:var(--success)">${approved.length}</div>
+        <div style="font-size:.83rem;color:var(--gray-500)">Approved</div>
+      </div>
+      <div style="background:#fff;border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.25rem;text-align:center">
+        <div style="font-size:2rem;font-weight:800;color:var(--danger)">${rejected.length}</div>
+        <div style="font-size:.83rem;color:var(--gray-500)">Rejected</div>
+      </div>
+      <div style="background:#fff;border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.25rem;text-align:center">
+        <div style="font-size:2rem;font-weight:800;color:var(--primary)">${allUsers.length}</div>
+        <div style="font-size:.83rem;color:var(--gray-500)">Total Users</div>
+      </div>
+    </div>
+
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="adminTab('pending',this)">
+        Pending <span class="count">${pending.length}</span>
+      </button>
+      <button class="admin-tab" onclick="adminTab('approved',this)">
+        Approved <span class="count">${approved.length}</span>
+      </button>
+      <button class="admin-tab" onclick="adminTab('rejected',this)">
+        Rejected <span class="count">${rejected.length}</span>
+      </button>
+    </div>
+
+    <div id="adminContent">
+      ${renderAdminList(pending,'pending')}
+    </div>
+  </div>
+  ${renderFooter()}
+</div>`;
+}
+
+function renderAdminList(users, status){
+  if(!users.length) return `
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fas fa-users"></i></div>
+      <h3>No ${status} users</h3>
+      <p>No user registrations with this status yet.</p>
+    </div>`;
+  return `<div class="requests-grid">
+    ${users.map(u=>`
+      <div class="request-card" id="rc-${u.id}">
+        <div class="request-user">
+          <div class="request-avatar">${getInitials(u.name)}</div>
+          <div>
+            <div class="request-name">${u.name}</div>
+            <div class="request-email">${u.email}</div>
+          </div>
+        </div>
+        <div class="request-meta">
+          <span class="request-meta-item"><i class="fas fa-running"></i>${u.sport||'Not specified'}</span>
+          <span class="request-meta-item"><i class="fas fa-city"></i>${u.city||'Not specified'}</span>
+          <span class="request-meta-item"><i class="fas fa-calendar"></i>${formatDate(u.registeredAt)}</span>
+        </div>
+        <div class="request-actions">
+          ${status==='pending'?`
+            <button class="btn btn-success btn-sm" onclick="approveUser('${u.id}')">
+              <i class="fas fa-check"></i> Approve
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="rejectUser('${u.id}')">
+              <i class="fas fa-times"></i> Reject
+            </button>
+          `:status==='approved'?`
+            <span class="status-badge status-approved"><i class="fas fa-check-circle"></i> Approved</span>
+            <button class="btn btn-danger btn-sm" onclick="rejectUser('${u.id}')">Revoke</button>
+          `:`
+            <span class="status-badge status-rejected"><i class="fas fa-times-circle"></i> Rejected</span>
+            <button class="btn btn-success btn-sm" onclick="approveUser('${u.id}')">Re-approve</button>
+          `}
+        </div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function attachAdminEvents(){}
+
+function adminTab(tab, el){
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const allUsers=Session.get('users').filter(u=>!u.isAdmin);
+  const filtered=allUsers.filter(u=>u.status===tab);
+  document.getElementById('adminContent').innerHTML=renderAdminList(filtered,tab);
+}
+
+function approveUser(id){
+  Session.approveUser(id);
+  toast('✅ User approved successfully','success');
+  navigate('admin');
+}
+
+function rejectUser(id){
+  Session.rejectUser(id);
+  toast('❌ User rejected','error');
+  navigate('admin');
+}
+
+/* ============================================================
+   SIGN IN PAGE
+============================================================ */
+function renderSignIn(){
+  return `
+<div class="auth-page">
+  <div class="auth-visual">
+    <div class="auth-visual-img"></div>
+    <div class="auth-visual-content">
+      <div style="font-size:3rem;margin-bottom:1rem">🏆</div>
+      <h1>Lebanon Sports Hub</h1>
+      <p>Your gateway to the best sporting events across all Lebanese mohafazat.</p>
+      <div class="auth-stats">
+        <div class="auth-stat"><div class="num">22</div><div class="lbl">Events</div></div>
+        <div class="auth-stat"><div class="num">8</div><div class="lbl">Regions</div></div>
+        <div class="auth-stat"><div class="num">12+</div><div class="lbl">Sports</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="auth-form-side">
+    <div class="auth-logo">
+      <div class="logo-icon"><i class="fas fa-trophy"></i></div>
+      Lebanon Sports Hub
+    </div>
+    <h2 class="auth-title">Welcome back</h2>
+    <p class="auth-sub">Sign in to access your account and explore events.</p>
+
+    <div id="signInError" class="auth-info-box hidden" style="background:var(--danger-light);border-color:#fca5a5;color:#991b1b">
+      <i class="fas fa-exclamation-circle"></i>
+      <span id="signInErrorMsg">Invalid email or password.</span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <div class="form-input-wrap">
+        <i class="fas fa-envelope input-icon"></i>
+        <input type="email" class="form-input" id="siEmail" placeholder="you@example.com" autocomplete="email">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" style="display:flex;justify-content:space-between">
+        Password <a style="font-weight:500;color:var(--primary);font-size:.82rem;cursor:pointer" onclick="showForgotPassword()">Forgot password?</a>
+      </label>
+      <div class="form-input-wrap">
+        <i class="fas fa-lock input-icon"></i>
+        <input type="password" class="form-input" id="siPassword" placeholder="Your password" autocomplete="current-password">
+        <button class="toggle-pw" type="button" onclick="togglePw('siPassword',this)"><i class="fas fa-eye"></i></button>
+      </div>
+    </div>
+    <button class="btn btn-primary w-full" id="signInBtn" onclick="doSignIn()" style="padding:.8rem;font-size:1rem;border-radius:var(--radius);margin-top:.25rem">
+      <i class="fas fa-sign-in-alt"></i> Sign In
+    </button>
+    
+    <div class="divider">or</div>
+    
+    <button class="google-btn" onclick="doGoogleSignIn()">
+      <i class="fas fa-user-secret" style="font-size:1.1rem;color:var(--gray-500)"></i>
+      Continue as Guest
+    </button>
+    
+    <div class="auth-footer" style="margin-top:1.5rem">
+      Don't have an account? <span onclick="navigate('signup')">Create one →</span>
+    </div>
+    <div class="auth-footer" style="margin-top:.5rem;font-size:.8rem">
+      <span onclick="demoLogin()" style="color:var(--gray-400)">Demo admin login</span>
+    </div>
+  </div>
+</div>`;
+}
+
+function attachSignInEvents(){
+  document.getElementById('siEmail').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('siPassword').focus()});
+  document.getElementById('siPassword').addEventListener('keydown',e=>{if(e.key==='Enter')doSignIn()});
+}
+
+function togglePw(id, btn){
+  const inp=document.getElementById(id);
+  const isText=inp.type==='text';
+  inp.type=isText?'password':'text';
+  btn.innerHTML=`<i class="fas ${isText?'fa-eye':'fa-eye-slash'}"></i>`;
+}
+
+async function doSignIn(){
+  const email=document.getElementById('siEmail').value.trim();
+  const pw=document.getElementById('siPassword').value;
+  const btn=document.getElementById('signInBtn');
+  const errBox=document.getElementById('signInError');
+  const errMsg=document.getElementById('signInErrorMsg');
+  errBox.classList.add('hidden');
+  if(!email||!pw){errMsg.textContent='Please fill in all fields.';errBox.classList.remove('hidden');return;}
+  btn.innerHTML='<div class="loading-spinner" style="width:20px;height:20px;border-width:2px"></div>';
+  btn.disabled=true;
+  try{
+    const res=await fetch(`${API}/api/login`,{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pw})
+    });
+    const data=await res.json();
+    if(res.status===403&&data.error?.includes('pending')){
+      Session.setUser({name:data.name||email,email,status:'pending'});
+      navigate('pending');return;
+    }
+    if(res.status===403&&(data.status==='rejected'||data.error?.includes('rejected'))){
+      Session.setUser({name:data.name||email,email,status:'rejected'});
+      navigate('rejected');return;
+    }
+    if(!res.ok)throw new Error(data.error||'Invalid email or password.');
+    const user={id:data.user.id,name:data.user.full_name,email:data.user.email,sport:data.user.sport_interest,status:'approved',isAdmin:false};
+    Session.setUser(user);
+    await _loadUserRegs();
+    startNotifPolling();
+    toast(`Welcome back, ${user.name.split(' ')[0]}! 👋`,'success');
+    navigate('home');
+  }catch(e){
+    errMsg.textContent=e.message;
+    errBox.classList.remove('hidden');
+    btn.innerHTML='<i class="fas fa-sign-in-alt"></i> Sign In';
+    btn.disabled=false;
+  }
+}
+
+function doGoogleSignIn(){
+  const existingUser=Session.getUser();
+  const mockGoogleUser={
+    id:uid(),email:'guest.user@gmail.com',
+    name:'Guest User',password:'',
+    isAdmin:false,status:'approved',
+    registeredAt:now(),sport:'All Sports',phone:'',city:'Beirut'
+  };
+  // If a user is already signed in, re-link Google to their existing account
+  if(existingUser){
+    toast('🔵 Google account linked to your profile!','success',2500);
+    Session.setUser({...existingUser,googleLinked:true});
+    return;
+  }
+  toast('🔵 Google Sign-In simulated successfully','info',2500);
+  setTimeout(()=>{
+    Session.addUser(mockGoogleUser);
+    Session.setUser(mockGoogleUser);
+    toast(`Welcome, ${mockGoogleUser.name}! 🎉`,'success');
+    navigate('home');
+  },1000);
+}
+
+function demoLogin(){
+  toast('Please contact the administrator for access.','info',2000);
+}
+
+/* ============================================================
+   SIGN UP PAGE
+============================================================ */
+function renderSignUp(){
+  const params=new URLSearchParams(window.location.search);
+  const isAdminRef=params.get('ref')==='admin';
+  return `
+<div class="auth-page">
+  <div class="auth-visual">
+    <div class="auth-visual-img"></div>
+    <div class="auth-visual-content">
+      <div style="font-size:3rem;margin-bottom:1rem">🌟</div>
+      <h1>Join Lebanon Sports Hub</h1>
+      <p>Create your account and start exploring world-class sports events across Lebanon.</p>
+      <div class="auth-stats">
+        <div class="auth-stat"><div class="num">22</div><div class="lbl">Events</div></div>
+        <div class="auth-stat"><div class="num">2026</div><div class="lbl">Season</div></div>
+        <div class="auth-stat"><div class="num">8</div><div class="lbl">Regions</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="auth-form-side" style="overflow-y:auto;max-height:100vh">
+    <div class="auth-logo">
+      <div class="logo-icon"><i class="fas fa-trophy"></i></div>
+      Lebanon Sports Hub
+    </div>
+    <h2 class="auth-title">Create Account</h2>
+    <p class="auth-sub">Fill in the form below. An admin will review your registration.</p>
+
+    ${isAdminRef?`<div class="auth-info-box"><i class="fas fa-shield-alt"></i>
+      <span>You're registering with an admin referral link. Your account will be marked for admin review.</span>
+    </div>`:''}
+
+    <div class="auth-info-box">
+      <i class="fas fa-info-circle"></i>
+      <span>After registration, an admin will approve your account. You'll be notified upon approval.</span>
+    </div>
+
+    <div id="signUpError" class="auth-info-box hidden" style="background:var(--danger-light);border-color:#fca5a5;color:#991b1b">
+      <i class="fas fa-exclamation-circle"></i>
+      <span id="signUpErrorMsg">Error message</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="form-group">
+        <label class="form-label">First Name</label>
+        <div class="form-input-wrap">
+          <i class="fas fa-user input-icon"></i>
+          <input type="text" class="form-input" id="suFirst" placeholder="Ahmad">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Name</label>
+        <div class="form-input-wrap">
+          <i class="fas fa-user input-icon"></i>
+          <input type="text" class="form-input" id="suLast" placeholder="Khalil">
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <div class="form-input-wrap">
+        <i class="fas fa-envelope input-icon"></i>
+        <input type="email" class="form-input" id="suEmail" placeholder="you@example.com">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Phone Number</label>
+      <div class="form-input-wrap">
+        <i class="fas fa-phone input-icon"></i>
+        <input type="tel" class="form-input" id="suPhone" placeholder="+961 70 000000">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="form-group">
+        <label class="form-label">City</label>
+        <div class="form-input-wrap">
+          <i class="fas fa-city input-icon"></i>
+          <input type="text" class="form-input" id="suCity" placeholder="Beirut">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Favorite Sport</label>
+        <div class="form-input-wrap">
+          <i class="fas fa-running input-icon"></i>
+          <select class="form-input" id="suSport">
+            <option value="">Select sport</option>
+            ${SPORT_TYPES.map(s=>`<option value="${s}">${s}</option>`).join('')}
+            <option value="All Sports">All Sports</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <div class="form-input-wrap">
+        <i class="fas fa-lock input-icon"></i>
+        <input type="password" class="form-input" id="suPassword" placeholder="Min. 8 characters">
+        <button class="toggle-pw" type="button" onclick="togglePw('suPassword',this)"><i class="fas fa-eye"></i></button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirm Password</label>
+      <div class="form-input-wrap">
+        <i class="fas fa-lock input-icon"></i>
+        <input type="password" class="form-input" id="suConfirm" placeholder="Repeat password">
+      </div>
+    </div>
+    <button class="btn btn-primary w-full" id="signUpBtn" onclick="doSignUp()" style="padding:.8rem;font-size:1rem;border-radius:var(--radius)">
+      <i class="fas fa-user-plus"></i> Create Account
+    </button>
+    
+    <div class="divider">or</div>
+    
+    <button class="google-btn" onclick="doGoogleSignIn()">
+      <i class="fas fa-user-secret" style="font-size:1.1rem;color:var(--gray-500)"></i>
+      Continue as Guest
+    </button>
+    
+    <div class="auth-footer">
+      Already have an account? <span onclick="navigate('signin')">Sign In →</span>
+    </div>
+  </div>
+</div>`;
+}
+
+function attachSignUpEvents(){}
+
+async function doSignUp(){
+  const first=document.getElementById('suFirst').value.trim();
+  const last=document.getElementById('suLast').value.trim();
+  const email=document.getElementById('suEmail').value.trim();
+  const phone=document.getElementById('suPhone').value.trim();
+  const city=document.getElementById('suCity').value.trim();
+  const sport=document.getElementById('suSport').value;
+  const pw=document.getElementById('suPassword').value;
+  const confirm=document.getElementById('suConfirm').value;
+  const btn=document.getElementById('signUpBtn');
+  const errBox=document.getElementById('signUpError');
+  const errMsg=document.getElementById('signUpErrorMsg');
+  errBox.classList.add('hidden');
+
+  if(!first||!last||!email||!pw||!confirm){
+    errMsg.textContent='Please fill in all required fields.';
+    errBox.classList.remove('hidden');return;
+  }
+  if(!/\S+@\S+\.\S+/.test(email)){
+    errMsg.textContent='Please enter a valid email address.';
+    errBox.classList.remove('hidden');return;
+  }
+  if(pw.length<8){
+    errMsg.textContent='Password must be at least 8 characters.';
+    errBox.classList.remove('hidden');return;
+  }
+  if(pw!==confirm){
+    errMsg.textContent='Passwords do not match.';
+    errBox.classList.remove('hidden');return;
+  }
+  if(Session.findUser(email)){
+    errMsg.textContent='An account with this email already exists.';
+    errBox.classList.remove('hidden');return;
+  }
+
+  btn.innerHTML='<div class="loading-spinner" style="width:20px;height:20px;border-width:2px"></div>';
+  btn.disabled=true;
+
+  try{
+    const res=await fetch(`${API}/api/register`,{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({full_name:`${first} ${last}`,email,password:pw,phone,sport_interest:sport})
+    });
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Registration failed.');
+    Session.setUser({name:`${first} ${last}`,email,status:'pending'});
+    toast('🎉 Registration submitted! Awaiting admin approval.','success',5000);
+    navigate('pending');
+  }catch(e){
+    errMsg.textContent=e.message;
+    errBox.classList.remove('hidden');
+    btn.innerHTML='<i class="fas fa-user-plus"></i> Create Account';
+    btn.disabled=false;
+  }
+}
+
+/* ============================================================
+   PENDING PAGE
+============================================================ */
+function renderPending(){
+  const user=Session.getUser();
+  // Start auto-polling so user is notified without manual check
+  setTimeout(startPendingPolling, 500);
+  return `
+<div class="pending-page">
+  <div class="pending-card scale-in">
+    <div class="pending-icon">⏳</div>
+    <h2>Registration Pending</h2>
+    <p>
+      Hi <strong>${user?.name||'there'}</strong>! Your account has been submitted and is currently under review by our admin team.
+      You'll be able to sign in once approved.
+    </p>
+    <!-- Live status banner — updated automatically -->
+    <div id="pendingStatusBanner" class="pending-notify polling" style="justify-content:center">
+      <i class="fas fa-circle-notch fa-spin"></i> Watching for admin decision…
+    </div>
+    <span class="status-badge status-pending" style="margin-bottom:1.5rem;justify-content:center">
+      <i class="fas fa-clock"></i> Awaiting Approval
+    </span>
+    <div style="background:var(--gray-50);border-radius:var(--radius);padding:1rem;margin-bottom:1.5rem;text-align:left">
+      <div style="font-size:.85rem;color:var(--gray-600);line-height:1.7">
+        <div><strong>Name:</strong> ${user?.name}</div>
+        <div><strong>Email:</strong> ${user?.email}</div>
+        <div><strong>Registered:</strong> ${formatDate(user?.registeredAt||now())}</div>
+      </div>
+    </div>
+    <button class="btn btn-primary w-full" style="justify-content:center;margin-bottom:.75rem" onclick="checkApprovalStatus()">
+      <i class="fas fa-sync"></i> Check Status
+    </button>
+    <button class="btn btn-gray w-full" style="justify-content:center" onclick="doLogout()">
+      <i class="fas fa-sign-out-alt"></i> Sign Out
+    </button>
+  </div>
+</div>`;
+}
+
+/* ============================================================
+   REJECTED PAGE
+============================================================ */
+function renderRejected(){
+  const user=Session.getUser();
+  return `
+<div class="pending-page">
+  <div class="pending-card scale-in">
+    <div class="pending-icon" style="background:linear-gradient(135deg,#fef2f2,#fecaca);color:var(--danger)">
+      <i class="fas fa-times-circle" style="font-size:2rem"></i>
+    </div>
+    <h2 style="color:var(--danger)">Registration Rejected</h2>
+    <p>
+      Hi <strong>${user?.name||'there'}</strong>, unfortunately your account registration was
+      <strong>not approved</strong> by our admin team at this time.
+    </p>
+    <div class="pending-notify rejected" style="justify-content:center;margin-bottom:1.25rem">
+      <i class="fas fa-times-circle"></i> Your registration has been <strong>rejected</strong>
+    </div>
+    <span class="status-badge status-rejected" style="margin-bottom:1.5rem;justify-content:center">
+      <i class="fas fa-ban"></i> Rejected
+    </span>
+    <div style="background:var(--danger-light);border:1px solid #fca5a5;border-radius:var(--radius);padding:1rem;margin-bottom:1.5rem;text-align:left">
+      <div style="font-size:.85rem;color:#991b1b;line-height:1.7">
+        <div style="font-weight:700;margin-bottom:.4rem"><i class="fas fa-info-circle"></i> What can you do?</div>
+        <div>• Contact our support team at <strong>tamernasr1717@gmail.com</strong></div>
+        <div>• Try registering with a different email address</div>
+        <div>• Ask the admin for clarification</div>
+      </div>
+    </div>
+    <button class="btn btn-primary w-full" style="justify-content:center;margin-bottom:.75rem" onclick="navigate('signup')">
+      <i class="fas fa-user-plus"></i> Register with Different Email
+    </button>
+    <button class="btn btn-gray w-full" style="justify-content:center" onclick="doLogout()">
+      <i class="fas fa-sign-out-alt"></i> Back to Sign In
+    </button>
+  </div>
+</div>`;
+}
+
+async function checkApprovalStatus(){
+  const user=Session.getUser();
+  if(!user){navigate('signin');return;}
+  try{
+    const res=await fetch(`${API}/api/login`,{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:user.email,password:'__check__'})
+    });
+    // A 401 means wrong password (expected) but we really want to check via a status endpoint
+    // Use a dedicated status check
+    const statusRes=await fetch(`${API}/api/check-status?email=${encodeURIComponent(user.email)}`,{credentials:'include'});
+    if(statusRes.ok){
+      const d=await statusRes.json();
+      if(d.status==='approved'){
+        Session.setUser({...user,status:'approved'});
+        toast('🎉 Your account has been approved! Welcome!','success');
+        navigate('signin');
+      }else if(d.status==='rejected'){
+        toast('Your account registration was rejected.','error');
+      }else{
+        toast('Still pending approval. Please check back later.','info');
+      }
+    }
+  }catch(e){
+    toast('Still pending approval. Please check back later.','info');
+  }
+}
+
+/* ============================================================
+   LOGOUT
+============================================================ */
+async function doLogout(){
+  stopPendingPolling();
+  stopNotifPolling();
+  _lastUnreadCount=0;
+  await fetch(`${API}/api/logout`,{method:'POST',credentials:'include'}).catch(()=>{});
+  Session.clearUser();
+  chatInitialized=false;chatOpen=false;
+  pendingBadgeShown=false;
+  document.getElementById('chatWindow').classList.add('hidden');
+  document.getElementById('chatToggle').classList.add('hidden');
+  toast('You have been signed out. See you soon! 👋','info');
+  navigate('signin');
+}
+
+/* ============================================================
+   FOOTER
+============================================================ */
+function renderFooter(){
+  return `
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand footer-col">
+        <div class="logo">
+          <div class="logo-icon"><i class="fas fa-trophy"></i></div>
+          Lebanon Sports Hub
+        </div>
+        <p>Lebanon's premier platform for discovering and attending world-class sporting events across all 8 mohafazat.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <ul>
+          <li onclick="navigate('events')">Events</li>
+          <li onclick="navigate('map')">Interactive Map</li>
+          <li onclick="toggleChat()">AI Assistant</li>
+          <li onclick="navigate('profile')">My Profile</li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Regions</h4>
+        <ul>
+          ${MOHAFAZAT.slice(0,4).map(m=>`<li onclick="navigate('events');setMohafazaFilter('${m.name}')">${m.flag} ${m.name}</li>`).join('')}
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Sports</h4>
+        <ul>
+          ${SPORT_TYPES.slice(0,4).map(s=>`<li onclick="navigate('events');setSportFilter('${s}')">${s}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Lebanon Sports Hub. All rights reserved.</span>
+      <div class="footer-socials">
+        <div class="footer-social"><i class="fab fa-facebook-f"></i></div>
+        <div class="footer-social"><i class="fab fa-instagram"></i></div>
+        <div class="footer-social"><i class="fab fa-twitter"></i></div>
+        <div class="footer-social"><i class="fab fa-youtube"></i></div>
+      </div>
+    </div>
+  </div>
+</footer>`;
+}
+
+/* ============================================================
+   FORGOT PASSWORD — 3-STEP EMAIL VERIFICATION
+============================================================ */
+let _fpEmail='';
+let _fpResendTimer=null;
+
+function showForgotPassword(){
+  document.getElementById('fpOverlay').classList.remove('hidden');
+  fpGoToStep(1);
+  // Pre-fill email if already typed
+  const siEmail=document.getElementById('siEmail');
+  if(siEmail&&siEmail.value) document.getElementById('fpEmail').value=siEmail.value;
+}
+
+function closeForgotModal(){
+  document.getElementById('fpOverlay').classList.add('hidden');
+  if(_fpResendTimer){clearInterval(_fpResendTimer);_fpResendTimer=null;}
+}
+
+function fpGoToStep(n){
+  [1,2,3,4].forEach(i=>{
+    document.getElementById('fpStep'+i)?.classList.remove('active');
+    const dot=document.getElementById('fpDot'+i);
+    if(dot){dot.classList.remove('active','done');}
+  });
+  document.getElementById('fpStep'+n).classList.add('active');
+  // Update dots (only 3 dots for steps 1-3, step 4 = success)
+  for(let i=1;i<=3;i++){
+    const dot=document.getElementById('fpDot'+i);
+    if(!dot)continue;
+    if(i<n) dot.classList.add('done');
+    else if(i===n&&n<=3) dot.classList.add('active');
+  }
+  // Hide progress dots on success step
+  const prog=document.getElementById('fpProgress');
+  if(prog) prog.style.display = n===4?'none':'flex';
+}
+
+function fpGoBack(step){ fpGoToStep(step); }
+
+async function fpSendCode(){
+  const email=document.getElementById('fpEmail').value.trim();
+  const errBox=document.getElementById('fpErr1');
+  const errMsg=document.getElementById('fpErrMsg1');
+  const btn=document.getElementById('fpSendBtn');
+  errBox.classList.add('hidden');
+
+  if(!email){errMsg.textContent='Please enter your email address.';errBox.classList.remove('hidden');return;}
+  if(!/\S+@\S+\.\S+/.test(email)){errMsg.textContent='Please enter a valid email address.';errBox.classList.remove('hidden');return;}
+
+  btn.innerHTML='<div class="loading-spinner" style="width:20px;height:20px;border-width:2px"></div>';
+  btn.disabled=true;
+
+  try{
+    const res=await fetch(`${API}/api/forgot-password`,{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email})
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Email not found. Please check and try again.');
+    _fpEmail=email;
+    document.getElementById('fpEmailDisplay').textContent=email;
+    // Clear code boxes
+    for(let i=0;i<6;i++){
+      const b=document.getElementById('fpC'+i);
+      b.value='';b.classList.remove('filled','error');
+    }
+    fpGoToStep(2);
+    setTimeout(()=>document.getElementById('fpC0').focus(),100);
+    fpStartResendTimer();
+    toast('📧 Verification code sent to '+email,'success',4000);
+  }catch(e){
+    errMsg.textContent=e.message;
+    errBox.classList.remove('hidden');
+  }finally{
+    btn.innerHTML='<i class="fas fa-paper-plane"></i> Send Verification Code';
+    btn.disabled=false;
+  }
+}
+
+function fpStartResendTimer(){
+  let secs=60;
+  document.getElementById('fpResendBtn').classList.add('hidden');
+  document.getElementById('fpResendTimer').classList.remove('hidden');
+  document.getElementById('fpCountdown').textContent=secs;
+  if(_fpResendTimer) clearInterval(_fpResendTimer);
+  _fpResendTimer=setInterval(()=>{
+    secs--;
+    document.getElementById('fpCountdown').textContent=secs;
+    if(secs<=0){
+      clearInterval(_fpResendTimer);_fpResendTimer=null;
+      document.getElementById('fpResendTimer').classList.add('hidden');
+      document.getElementById('fpResendBtn').classList.remove('hidden');
+    }
+  },1000);
+}
+
+async function fpResendCode(){
+  document.getElementById('fpEmail').value=_fpEmail;
+  await fpSendCode();
+}
+
+/* ── Code box helpers ── */
+function fpCodeInput(idx){
+  const box=document.getElementById('fpC'+idx);
+  const val=box.value.replace(/\D/g,'');
+  box.value=val.slice(0,1);
+  box.classList.toggle('filled',box.value!=='');
+  box.classList.remove('error');
+  if(box.value&&idx<5) document.getElementById('fpC'+(idx+1)).focus();
+}
+
+function fpCodeKey(e,idx){
+  if(e.key==='Backspace'){
+    const box=document.getElementById('fpC'+idx);
+    if(!box.value&&idx>0){
+      document.getElementById('fpC'+(idx-1)).focus();
+      document.getElementById('fpC'+(idx-1)).value='';
+      document.getElementById('fpC'+(idx-1)).classList.remove('filled');
+    }
+  }
+  if(e.key==='Enter') fpVerifyCode();
+  // Allow paste of 6 digits
+  if(e.key==='v'&&(e.ctrlKey||e.metaKey)){
+    e.preventDefault();
+    navigator.clipboard.readText().then(txt=>{
+      const digits=txt.replace(/\D/g,'').slice(0,6);
+      for(let i=0;i<digits.length;i++){
+        const b=document.getElementById('fpC'+i);
+        if(b){b.value=digits[i];b.classList.add('filled');}
+      }
+      const last=document.getElementById('fpC'+(digits.length-1));
+      if(last) last.focus();
+    }).catch(()=>{});
+  }
+}
+
+async function fpVerifyCode(){
+  const code=[0,1,2,3,4,5].map(i=>document.getElementById('fpC'+i).value).join('');
+  const errBox=document.getElementById('fpErr2');
+  const errMsg=document.getElementById('fpErrMsg2');
+  const btn=document.getElementById('fpVerifyBtn');
+  errBox.classList.add('hidden');
+
+  if(code.length<6){
+    errMsg.textContent='Please enter all 6 digits.';errBox.classList.remove('hidden');
+    [0,1,2,3,4,5].forEach(i=>document.getElementById('fpC'+i).classList.add('error'));
+    return;
+  }
+
+  btn.innerHTML='<div class="loading-spinner" style="width:20px;height:20px;border-width:2px"></div>';
+  btn.disabled=true;
+
+  try{
+    const res=await fetch(`${API}/api/verify-reset-code`,{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:_fpEmail,code})
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Invalid or expired code. Please try again.');
+    fpGoToStep(3);
+    setTimeout(()=>document.getElementById('fpNewPw').focus(),100);
+  }catch(e){
+    errMsg.textContent=e.message;errBox.classList.remove('hidden');
+    [0,1,2,3,4,5].forEach(i=>document.getElementById('fpC'+i).classList.add('error'));
+  }finally{
+    btn.innerHTML='<i class="fas fa-check-circle"></i> Verify Code';
+    btn.disabled=false;
+  }
+}
+
+async function doResetPassword(){
+  const pw=document.getElementById('fpNewPw').value;
+  const confirm=document.getElementById('fpConfirmPw').value;
+  const btn=document.getElementById('fpSubmitBtn');
+  const errBox=document.getElementById('fpErr3');
+  const errMsg=document.getElementById('fpErrMsg3');
+  errBox.classList.add('hidden');
+
+  if(!pw||!confirm){errMsg.textContent='Please fill in both password fields.';errBox.classList.remove('hidden');return;}
+  if(pw.length<8){errMsg.textContent='Password must be at least 8 characters.';errBox.classList.remove('hidden');return;}
+  if(pw!==confirm){errMsg.textContent='Passwords do not match.';errBox.classList.remove('hidden');return;}
+
+  const code=[0,1,2,3,4,5].map(i=>document.getElementById('fpC'+i).value).join('');
+
+  btn.innerHTML='<div class="loading-spinner" style="width:20px;height:20px;border-width:2px"></div>';
+  btn.disabled=true;
+
+  try{
+    const res=await fetch(`${API}/api/reset-password`,{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:_fpEmail,code,new_password:pw,unlink_google:true})
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Password reset failed. Please restart the process.');
+    fpGoToStep(4);
+    toast('✅ Password reset successfully!','success');
+  }catch(e){
+    errMsg.textContent=e.message;errBox.classList.remove('hidden');
+    btn.innerHTML='<i class="fas fa-shield-alt"></i> Reset Password';
+    btn.disabled=false;
+  }
+}
+
+/* ============================================================
+   PENDING PAGE — AUTO POLLING FOR APPROVAL NOTIFICATION
+============================================================ */
+let _pendingPollInterval=null;
+
+function startPendingPolling(){
+  stopPendingPolling(); // clear any old interval
+  _pendingPollInterval=setInterval(async()=>{
+    const user=Session.getUser();
+    if(!user) return stopPendingPolling();
+    try{
+      const res=await fetch(`${API}/api/check-status?email=${encodeURIComponent(user.email)}`,{credentials:'include'});
+      if(!res.ok) return;
+      const d=await res.json();
+      const banner=document.getElementById('pendingStatusBanner');
+      if(d.status==='approved'){
+        stopPendingPolling();
+        if(banner){
+          banner.className='pending-notify approved';
+          banner.innerHTML='<i class="fas fa-check-circle"></i> 🎉 Your account has been <strong>approved</strong>! Redirecting to sign in…';
+        }
+        toast('🎉 Your account has been approved! Redirecting…','success',4000);
+        Session.setUser({...user,status:'approved'});
+        setTimeout(()=>navigate('signin'), 2500);
+      } else if(d.status==='rejected'){
+        stopPendingPolling();
+        if(banner){
+          banner.className='pending-notify rejected';
+          banner.innerHTML='<i class="fas fa-times-circle"></i> Your registration was <strong>rejected</strong>. Redirecting…';
+        }
+        toast('❌ Your registration was rejected.','error',4000);
+        Session.setUser({...user,status:'rejected'});
+        setTimeout(()=>navigate('rejected'), 2500);
+      } else {
+        if(banner) banner.className='pending-notify polling';
+      }
+    }catch(e){}
+  },5000); // poll every 5 seconds
+}
+
+function stopPendingPolling(){
+  if(_pendingPollInterval){clearInterval(_pendingPollInterval);_pendingPollInterval=null;}
+}
+
+/* ============================================================
+   NOTIFICATION SYSTEM
+============================================================ */
+let _notifPollInterval = null;
+let _notifPanelOpen    = false;
+let _lastUnreadCount   = 0;
+
+/* ── AudioContext — created once and kept alive after first user gesture ── */
+let _audioCtx = null;
+function _getAudioCtx(){
+  if(!_audioCtx){
+    try{ _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
+  }
+  if(_audioCtx && _audioCtx.state === 'suspended'){
+    _audioCtx.resume().catch(()=>{});
+  }
+  return _audioCtx;
+}
+// Unlock audio on the very first user interaction (click / keydown / touch)
+(function unlockAudio(){
+  const unlock = ()=>{ _getAudioCtx(); document.removeEventListener('click', unlock); document.removeEventListener('keydown', unlock); document.removeEventListener('touchstart', unlock); };
+  document.addEventListener('click',     unlock, {once:true});
+  document.addEventListener('keydown',   unlock, {once:true});
+  document.addEventListener('touchstart',unlock, {once:true});
+})();
+
+/* ── Notification Sound (Web Audio API — no external file needed) ── */
+function playNotifSound(type){
+  try{
+    const ctx = _getAudioCtx();
+    if(!ctx) return;
+
+    if(type === 'approved' || type === 'event_approved'){
+      // Ascending 3-note chime — celebratory C5→E5→G5
+      [523.25, 659.25, 783.99].forEach((freq, i) => {
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        const t = ctx.currentTime + i * 0.18;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.38, t + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+        osc.start(t); osc.stop(t + 0.56);
+      });
+
+    } else if(type === 'rejected' || type === 'event_rejected'){
+      // Two descending tones — G4→Eb4, subtle alert
+      [392.00, 311.13].forEach((freq, i) => {
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        const t = ctx.currentTime + i * 0.25;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.30, t + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+        osc.start(t); osc.stop(t + 0.56);
+      });
+
+    } else {
+      // Soft single ping — generic info
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.56);
+    }
+  }catch(e){/* Audio not supported — fail silently */}
+}
+
+/* ── Rich notification toast popup ── */
+function showNotifToast(notif, durationMs = 7000){
+  const isApproved = notif.type === 'approved' || notif.type === 'event_approved';
+  const isRejected = notif.type === 'rejected' || notif.type === 'event_rejected';
+  const typeClass  = isApproved ? 'approved' : isRejected ? 'rejected' : 'info';
+  const icon       = isApproved ? 'fa-check-circle' : isRejected ? 'fa-times-circle' : 'fa-bell';
+
+  const container  = document.getElementById('toastContainer');
+  if(!container) return;
+
+  const el = document.createElement('div');
+  el.className = `notif-toast notif-toast-${typeClass}`;
+  el.innerHTML = `
+    <div class="notif-toast-icon"><i class="fas ${icon}"></i></div>
+    <div style="flex:1;min-width:0;padding-right:1.5rem">
+      <div class="notif-toast-title">${notif.title}</div>
+      <div class="notif-toast-msg">${notif.message}</div>
+    </div>
+    <button class="notif-toast-close" title="Dismiss"><i class="fas fa-times"></i></button>
+    <div class="notif-toast-progress" style="animation:progressBar ${durationMs}ms linear forwards"></div>
+  `;
+
+  // Dismiss on close button
+  el.querySelector('.notif-toast-close').onclick = () => dismissNotifToast(el);
+
+  container.appendChild(el);
+
+  // Shake the bell icon
+  const bell = document.querySelector('.notif-bell');
+  if(bell){ bell.classList.remove('shake'); void bell.offsetWidth; bell.classList.add('shake'); }
+
+  // Auto-dismiss
+  setTimeout(() => dismissNotifToast(el), durationMs);
+}
+
+function dismissNotifToast(el){
+  if(!el || el._dismissing) return;
+  el._dismissing = true;
+  el.classList.add('hide');
+  setTimeout(() => el.remove(), 400);
+}
+
+function startNotifPolling(){
+  stopNotifPolling();
+  checkNotifications(); // immediate first fetch
+  _notifPollInterval = setInterval(checkNotifications, 8000);
+}
+
+function stopNotifPolling(){
+  if(_notifPollInterval){clearInterval(_notifPollInterval);_notifPollInterval=null;}
+}
+
+async function checkNotifications(){
+  const user = Session.getUser();
+  if(!user || user.isAdmin) return; // admins don't get user notifications
+  try{
+    const res = await fetch(`${API}/api/my-notifications`,{credentials:'include'});
+    if(!res.ok) return;
+    const notifs = await res.json();
+    const unread = notifs.filter(n=>!n.read);
+
+    // Show rich toast + sound for brand-new unread notifications
+    if(unread.length > _lastUnreadCount){
+      const newOnes = unread.slice(0, unread.length - _lastUnreadCount);
+      newOnes.forEach(n=>{
+        playNotifSound(n.type);   // 🔔 play chime / alert tone
+        showNotifToast(n, 7000);  // 🖼️ show rich popup card
+        // Auto-navigate for account status changes only (not event registrations)
+        if(n.type==='approved'){ setTimeout(()=>navigate('home'),800); }
+        if(n.type==='rejected'){ setTimeout(()=>navigate('rejected'),800); }
+        // event_approved / event_rejected: just show toast, no page redirect
+      });
+    }
+    _lastUnreadCount = unread.length;
+    updateNotifBell(unread.length);
+    renderNotifList(notifs);
+  }catch(e){}
+}
+
+function updateNotifBell(count){
+  const wrap = document.getElementById('notifWrap');
+  if(!wrap) return;
+  // Remove old badge
+  const old = wrap.querySelector('.notif-badge');
+  if(old) old.remove();
+  if(count > 0){
+    const badge = document.createElement('div');
+    badge.className = 'notif-badge';
+    badge.textContent = count > 9 ? '9+' : count;
+    wrap.querySelector('.notif-bell').appendChild(badge);
+  }
+}
+
+function renderNotifList(notifs){
+  const list = document.getElementById('notifList');
+  if(!list) return;
+  if(!notifs.length){
+    list.innerHTML='<div class="notif-empty"><i class="fas fa-check-circle" style="display:block;font-size:1.5rem;margin-bottom:.5rem;color:var(--gray-300)"></i>No notifications</div>';
+    return;
+  }
+  const icons = {approved:'fa-check-circle',rejected:'fa-times-circle',info:'fa-info-circle',event_approved:'fa-ticket-alt',event_rejected:'fa-times-circle'};
+  list.innerHTML = notifs.map(n=>{
+    const iconClass = n.type==='event_approved'?'approved':n.type==='event_rejected'?'rejected':(n.type||'info');
+    return `
+    <div class="notif-item ${n.read?'':'unread'}">
+      <div class="notif-item-icon ${iconClass}">
+        <i class="fas ${icons[n.type]||'fa-bell'}"></i>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="notif-item-title">${n.title}</div>
+        <div class="notif-item-msg">${n.message}</div>
+        <div class="notif-item-time">${timeAgo(n.created_at)}</div>
+      </div>
+    </div>
+  `}).join('');
+}
+
+function toggleNotifPanel(e){
+  e.stopPropagation();
+  const panel = document.getElementById('notifPanel');
+  if(!panel) return;
+  _notifPanelOpen = !_notifPanelOpen;
+  panel.classList.toggle('hidden', !_notifPanelOpen);
+  if(_notifPanelOpen){
+    // Mark all as read when panel opens
+    fetch(`${API}/api/my-notifications/read`,{method:'POST',credentials:'include'}).catch(()=>{});
+    _lastUnreadCount = 0;
+    updateNotifBell(0);
+  }
+}
+
+async function clearAllNotifs(){
+  await fetch(`${API}/api/my-notifications/clear`,{method:'POST',credentials:'include'}).catch(()=>{});
+  _lastUnreadCount = 0;
+  updateNotifBell(0);
+  renderNotifList([]);
+}
+
+function timeAgo(iso){
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff/60000);
+  if(m<1) return 'Just now';
+  if(m<60) return `${m}m ago`;
+  const h = Math.floor(m/60);
+  if(h<24) return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+
+// Close panel when clicking outside
+document.addEventListener('click', e=>{
+  if(_notifPanelOpen){
+    const wrap = document.getElementById('notifWrap');
+    if(wrap && !wrap.contains(e.target)){
+      _notifPanelOpen=false;
+      const panel=document.getElementById('notifPanel');
+      if(panel) panel.classList.add('hidden');
+    }
+  }
+});
+
+/* ============================================================
+   INIT
+============================================================ */
+function init(){
+  setTimeout(()=>{
+    document.getElementById('loadingOverlay').style.display='none';
+    // Check URL param for ref
+    const params=new URLSearchParams(window.location.search);
+    const page=params.get('page');
+    if(page && ['home','events','map','signup','signin'].includes(page)){
+      navigate(page);
+    } else {
+      const user=Session.getUser();
+      navigate(user?'home':'signin');
+    }
+  },1200);
+  // Scroll effect
+  window.addEventListener('scroll',()=>{
+    document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>10);
+  });
+}
+
+init();
+
+</script>
+
+
+<script src="chatbot.js"></script>
+
+<!-- ============================================================
+     FORGOT PASSWORD MODAL  (3-step: email → verify code → new password)
+============================================================ -->
+<div class="fp-overlay hidden" id="fpOverlay">
+  <div class="fp-card">
+    <button class="fp-close" onclick="closeForgotModal()"><i class="fas fa-times"></i></button>
+
+    <!-- progress dots -->
+    <div style="display:flex;justify-content:center;gap:.5rem;margin-bottom:1.5rem" id="fpProgress">
+      <div class="fp-dot active" id="fpDot1"></div>
+      <div class="fp-dot" id="fpDot2"></div>
+      <div class="fp-dot" id="fpDot3"></div>
+    </div>
+
+    <div class="fp-steps">
+
+      <!-- ── STEP 1: Enter email ── -->
+      <div class="fp-step active" id="fpStep1">
+        <div class="fp-icon"><i class="fas fa-envelope"></i></div>
+        <h3 style="text-align:center;font-size:1.25rem;font-weight:800;color:var(--gray-900);margin-bottom:.35rem">Forgot Password?</h3>
+        <p style="text-align:center;font-size:.875rem;color:var(--gray-500);margin-bottom:1.5rem">
+          Enter your registered email. We'll send a 6-digit verification code.
+        </p>
+        <div id="fpErr1" class="auth-info-box hidden" style="background:var(--danger-light);border-color:#fca5a5;color:#991b1b;margin-bottom:1rem">
+          <i class="fas fa-exclamation-circle"></i><span id="fpErrMsg1"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <div class="form-input-wrap">
+            <i class="fas fa-envelope input-icon"></i>
+            <input type="email" class="form-input" id="fpEmail" placeholder="you@example.com"
+              onkeydown="if(event.key==='Enter')fpSendCode()">
+          </div>
+        </div>
+        <button class="btn btn-primary w-full" id="fpSendBtn" onclick="fpSendCode()"
+          style="padding:.8rem;font-size:1rem;border-radius:var(--radius);justify-content:center">
+          <i class="fas fa-paper-plane"></i> Send Verification Code
+        </button>
+        <div style="text-align:center;margin-top:1rem;font-size:.85rem;color:var(--gray-500)">
+          Remember it? <span onclick="closeForgotModal()" style="color:var(--primary);font-weight:600;cursor:pointer">Back to Sign In</span>
+        </div>
+      </div>
+
+      <!-- ── STEP 2: Enter 6-digit code ── -->
+      <div class="fp-step" id="fpStep2">
+        <div class="fp-icon" style="background:#fef3c7;color:var(--accent-dark)"><i class="fas fa-shield-alt"></i></div>
+        <h3 style="text-align:center;font-size:1.25rem;font-weight:800;color:var(--gray-900);margin-bottom:.35rem">Check Your Email</h3>
+        <p style="text-align:center;font-size:.875rem;color:var(--gray-500);margin-bottom:.35rem">
+          We sent a 6-digit code to
+        </p>
+        <p style="text-align:center;font-size:.875rem;font-weight:700;color:var(--primary);margin-bottom:1.5rem" id="fpEmailDisplay"></p>
+
+        <div id="fpErr2" class="auth-info-box hidden" style="background:var(--danger-light);border-color:#fca5a5;color:#991b1b;margin-bottom:1rem">
+          <i class="fas fa-exclamation-circle"></i><span id="fpErrMsg2"></span>
+        </div>
+
+        <!-- 6-box code input -->
+        <div style="display:flex;gap:.5rem;justify-content:center;margin-bottom:1.5rem" id="fpCodeBoxes">
+          <input class="fp-code-box" maxlength="1" inputmode="numeric" pattern="[0-9]" id="fpC0" oninput="fpCodeInput(0)" onkeydown="fpCodeKey(event,0)">
+          <input class="fp-code-box" maxlength="1" inputmode="numeric" pattern="[0-9]" id="fpC1" oninput="fpCodeInput(1)" onkeydown="fpCodeKey(event,1)">
+          <input class="fp-code-box" maxlength="1" inputmode="numeric" pattern="[0-9]" id="fpC2" oninput="fpCodeInput(2)" onkeydown="fpCodeKey(event,2)">
+          <input class="fp-code-box" maxlength="1" inputmode="numeric" pattern="[0-9]" id="fpC3" oninput="fpCodeInput(3)" onkeydown="fpCodeKey(event,3)">
+          <input class="fp-code-box" maxlength="1" inputmode="numeric" pattern="[0-9]" id="fpC4" oninput="fpCodeInput(4)" onkeydown="fpCodeKey(event,4)">
+          <input class="fp-code-box" maxlength="1" inputmode="numeric" pattern="[0-9]" id="fpC5" oninput="fpCodeInput(5)" onkeydown="fpCodeKey(event,5)">
+        </div>
+
+        <button class="btn btn-primary w-full" id="fpVerifyBtn" onclick="fpVerifyCode()"
+          style="padding:.8rem;font-size:1rem;border-radius:var(--radius);justify-content:center">
+          <i class="fas fa-check-circle"></i> Verify Code
+        </button>
+
+        <div style="text-align:center;margin-top:1rem;font-size:.82rem;color:var(--gray-500)">
+          Didn't receive it?
+          <span id="fpResendBtn" onclick="fpResendCode()" style="color:var(--primary);font-weight:600;cursor:pointer">Resend Code</span>
+          <span id="fpResendTimer" class="hidden" style="color:var(--gray-400)">Resend in <strong id="fpCountdown">60</strong>s</span>
+        </div>
+        <div style="text-align:center;margin-top:.5rem;font-size:.82rem">
+          <span onclick="fpGoBack(1)" style="color:var(--gray-400);cursor:pointer"><i class="fas fa-arrow-left"></i> Change email</span>
+        </div>
+      </div>
+
+      <!-- ── STEP 3: New password ── -->
+      <div class="fp-step" id="fpStep3">
+        <div class="fp-icon"><i class="fas fa-lock"></i></div>
+        <h3 style="text-align:center;font-size:1.25rem;font-weight:800;color:var(--gray-900);margin-bottom:.35rem">Set New Password</h3>
+        <p style="text-align:center;font-size:.875rem;color:var(--gray-500);margin-bottom:1.5rem">
+          Choose a strong new password for your account.
+        </p>
+        <div id="fpErr3" class="auth-info-box hidden" style="background:var(--danger-light);border-color:#fca5a5;color:#991b1b;margin-bottom:1rem">
+          <i class="fas fa-exclamation-circle"></i><span id="fpErrMsg3"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <div class="form-input-wrap">
+            <i class="fas fa-lock input-icon"></i>
+            <input type="password" class="form-input" id="fpNewPw" placeholder="Min. 8 characters">
+            <button class="toggle-pw" type="button" onclick="togglePw('fpNewPw',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm New Password</label>
+          <div class="form-input-wrap">
+            <i class="fas fa-lock input-icon"></i>
+            <input type="password" class="form-input" id="fpConfirmPw" placeholder="Repeat new password"
+              onkeydown="if(event.key==='Enter')doResetPassword()">
+          </div>
+        </div>
+        <div class="auth-info-box" style="margin-bottom:1.25rem">
+          <i class="fas fa-info-circle"></i>
+          <span>Resetting your password will unlink any connected Google account. You can re-link Google after signing back in.</span>
+        </div>
+        <button class="btn btn-primary w-full" id="fpSubmitBtn" onclick="doResetPassword()"
+          style="padding:.8rem;font-size:1rem;border-radius:var(--radius);justify-content:center">
+          <i class="fas fa-shield-alt"></i> Reset Password
+        </button>
+      </div>
+
+      <!-- ── STEP 4: Success ── -->
+      <div class="fp-step" id="fpStep4">
+        <div class="fp-icon" style="background:var(--green-light);color:var(--success)"><i class="fas fa-check-circle"></i></div>
+        <h3 style="text-align:center;font-size:1.25rem;font-weight:800;color:var(--gray-900);margin-bottom:.6rem">Password Updated!</h3>
+        <p style="text-align:center;font-size:.875rem;color:var(--gray-500);margin-bottom:.75rem">
+          Your password has been reset successfully. Any Google link has been removed — you can re-link Google after signing in.
+        </p>
+        <div class="pending-notify approved" style="justify-content:center;margin-bottom:1rem">
+          <i class="fas fa-check-circle"></i> Account converted to standard login
+        </div>
+        <button class="btn btn-primary w-full" onclick="closeForgotModal()"
+          style="padding:.8rem;font-size:1rem;border-radius:var(--radius);justify-content:center">
+          <i class="fas fa-sign-in-alt"></i> Sign In Now
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
