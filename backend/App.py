@@ -294,12 +294,15 @@ def send_reset_email(to_email: str, code: str):
 
 # ── DB config ──────────────────────────────────────────────────────────────────
 DB_CONFIG = {
-    "host":      os.environ.get("DB_HOST", "localhost"),
-    "port":      int(os.environ.get("DB_PORT", 3306)),
-    "user":      os.environ.get("DB_USER", "root"),
-    "password":  os.environ.get("DB_PASSWORD", "taml7677"),
-    "database":  os.environ.get("DB_NAME", "SportsFinalyearproject"),
-    "autocommit": False,
+    "host":             os.environ.get("DB_HOST", "localhost"),
+    "port":             int(os.environ.get("DB_PORT", 3306)),
+    "user":             os.environ.get("DB_USER", "root"),
+    "password":         os.environ.get("DB_PASSWORD", "taml7677"),
+    "database":         os.environ.get("DB_NAME", "SportsFinalyearproject"),
+    "autocommit":       False,
+    "ssl_disabled":     os.environ.get("DB_HOST", "localhost") == "localhost",
+    "ssl_verify_cert":  False,
+    "ssl_verify_identity": False,
 }
 
 
