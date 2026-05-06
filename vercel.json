@@ -20,8 +20,16 @@
       "dest": "frontend/admin.html"
     },
     {
+      "src": "/admin.html",
+      "dest": "frontend/admin.html"
+    },
+    {
       "src": "/chatbot.js",
       "dest": "frontend/chatbot.js"
+    },
+    {
+      "src": "/index.html",
+      "dest": "frontend/index.html"
     },
     {
       "src": "/",
