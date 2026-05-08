@@ -584,6 +584,8 @@ let currentTab='overview';
 let regFilter='pending';
 let memberFilter='pending';
 let regSearch='';
+let regPage=1;
+let regPerPage=10;
 let memberSearch='';
 
 function showTab(tab){
@@ -666,16 +668,35 @@ async function renderRegistrations(){
     if(regFilter!=='all')filtered=regs.filter(r=>r.status===regFilter);
     if(regSearch){const q=regSearch.toLowerCase();filtered=filtered.filter(r=>(r.guest_name||r.user_full_name||'').toLowerCase().includes(q)||(r.guest_email||r.user_email_addr||'').toLowerCase().includes(q)||(r.event_title||'').toLowerCase().includes(q));}
     filtered.sort((a,b)=>new Date(b.registered_at)-new Date(a.registered_at));
+    const totalPages=Math.max(1,Math.ceil(filtered.length/regPerPage));
+    if(regPage>totalPages)regPage=1;
+    const paginated=filtered.slice((regPage-1)*regPerPage,regPage*regPerPage);
+    const paginationHTML=`<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-top:1.25rem;padding:.75rem 1rem;background:#fff;border-radius:8px;border:1px solid #e5e7eb">
+      <div style="display:flex;align-items:center;gap:.5rem;font-size:.875rem;color:#6b7280">
+        Show
+        <select onchange="regPerPage=parseInt(this.value);regPage=1;renderRegistrations()" style="border:1px solid #e5e7eb;border-radius:6px;padding:2px 6px;font-size:.875rem">
+          ${[10,25,50,100].map(n=>`<option value="${n}" ${regPerPage===n?'selected':''}>${n}</option>`).join('')}
+        </select>
+        per page &nbsp;|&nbsp; Showing ${filtered.length===0?0:(regPage-1)*regPerPage+1}–${Math.min(regPage*regPerPage,filtered.length)} of ${filtered.length}
+      </div>
+      <div style="display:flex;gap:.4rem">
+        <button onclick="regPage=1;renderRegistrations()" ${regPage===1?'disabled':''} style="padding:4px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer;font-size:.8rem">«</button>
+        <button onclick="regPage--;renderRegistrations()" ${regPage===1?'disabled':''} style="padding:4px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer;font-size:.8rem">‹</button>
+        ${Array.from({length:totalPages},(_, i)=>i+1).filter(p=>p===1||p===totalPages||Math.abs(p-regPage)<=1).reduce((acc,p,i,arr)=>{if(i>0&&arr[i-1]!==p-1)acc.push('…');acc.push(p);return acc;},[]).map(p=>p==='…'?`<span style="padding:4px 6px;font-size:.8rem;color:#9ca3af">…</span>`:`<button onclick="regPage=${p};renderRegistrations()" style="padding:4px 10px;border:1px solid ${p===regPage?'#3b82f6':'#e5e7eb'};border-radius:6px;background:${p===regPage?'#3b82f6':'#fff'};color:${p===regPage?'#fff':'inherit'};cursor:pointer;font-size:.8rem">${p}</button>`).join('')}
+        <button onclick="regPage++;renderRegistrations()" ${regPage===totalPages?'disabled':''} style="padding:4px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer;font-size:.8rem">›</button>
+        <button onclick="regPage=totalPages;renderRegistrations()" ${regPage===totalPages?'disabled':''} style="padding:4px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer;font-size:.8rem">»</button>
+      </div>
+    </div>`;
     document.getElementById('pageContent').innerHTML=`
     <div class="filter-tabs">
       ${['all','pending','approved','rejected'].map(f=>`<div class="filter-tab ${regFilter===f?'active':''}" onclick="setRegFilter('${f}')">${f.charAt(0).toUpperCase()+f.slice(1)}<span class="tab-count">${counts[f]}</span></div>`).join('')}
     </div>
     <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap">
-      <div class="search-bar" style="margin-bottom:0"><i class="fas fa-search"></i><input type="text" placeholder="Search by user, event…" value="${regSearch}" oninput="regSearch=this.value;renderRegistrations()"></div>
+      <div class="search-bar" style="margin-bottom:0"><i class="fas fa-search"></i><input type="text" placeholder="Search by user, event…" value="${regSearch}" oninput="regSearch=this.value;regPage=1;renderRegistrations()"></div>
       <span class="section-count">${filtered.length} result${filtered.length!==1?'s':''}</span>
       ${regFilter==='pending'&&filtered.length>0?`<button class="btn btn-approve" onclick="bulkApproveRegistrations()" style="margin-left:auto"><i class="fas fa-check-double"></i> Approve All Pending</button>`:''}
     </div>
-    ${filtered.length===0?`<div class="empty-state"><i class="fas fa-ticket-alt"></i><h3>No ${regFilter==='all'?'':regFilter} registrations found</h3><p>${regSearch?'Try a different search term.':'No event registrations in this category yet.'}</p></div>`:`<div>${filtered.map(reg=>regCard(reg)).join('')}</div>`}`;
+    ${filtered.length===0?`<div class="empty-state"><i class="fas fa-ticket-alt"></i><h3>No ${regFilter==='all'?'':regFilter} registrations found</h3><p>${regSearch?'Try a different search term.':'No event registrations in this category yet.'}</p></div>`:`<div>${paginated.map(reg=>regCard(reg)).join('')}${paginationHTML}</div>`}`;
   }catch(e){document.getElementById('pageContent').innerHTML=`<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Failed to load registrations</h3><p>Make sure the backend is running.</p></div>`;}
 }
 
@@ -707,7 +728,7 @@ function regCard(reg){
   </div>`;
 }
 
-function setRegFilter(f){regFilter=f;regSearch='';renderRegistrations()}
+function setRegFilter(f){regFilter=f;regSearch='';regPage=1;renderRegistrations()}
 
 async function approveReg(id){
   try{await fetch(`${API}/api/admin/registrations/${id}/approve`,{method:'POST',credentials:'include'});toast('Registration approved','ok');updateBadges();renderRegistrations();}catch(e){toast('Failed','err');}
