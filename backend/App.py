@@ -1131,9 +1131,5 @@ def set_admin_password(email, plain_password):
 
 
 if __name__ == "__main__":
-    try:
-        set_admin_password("tamernasr1717@gmail.com", "TAML7677")
-    except Exception as e:
-        print(f"Note: Could not auto-set admin password: {e}")
     print("Starting Lebanon Sports Hub API on http://localhost:5000")
     app.run(debug=True, port=5000)
