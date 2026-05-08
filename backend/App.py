@@ -391,8 +391,7 @@ def register():
     password = data["password"]
 
     # Basic email format validation
-    import re as _re
-    if not _re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
         return jsonify({"error": "Invalid email address format"}), 400
 
     # Password strength check
@@ -415,7 +414,6 @@ def register():
         return jsonify({"error": "A verification email was already sent to this address. Please check your inbox."}), 409
 
     # Generate verification token
-    import secrets
     token = secrets.token_urlsafe(32)
     pw_hash = generate_password_hash(password)
 
