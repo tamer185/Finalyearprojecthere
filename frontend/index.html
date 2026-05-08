@@ -48,6 +48,70 @@
   --radius-xl: 24px;
   --radius-full: 9999px;
   --transition: all .2s cubic-bezier(.4,0,.2,1);
+}
+
+/* Dark mode variables — slate-based, not pure black */
+[data-theme="dark"] {
+  --white: #1e2433;
+  --off-white: #161c2d;
+  --gray-50: #1a2035;
+  --gray-100: #1e2740;
+  --gray-200: #263354;
+  --gray-300: #334068;
+  --gray-400: #7b8db0;
+  --gray-500: #9aaac8;
+  --gray-600: #b8c5d9;
+  --gray-700: #cdd8ea;
+  --gray-800: #e2eaf5;
+  --gray-900: #f0f4fc;
+  --primary: #4d7ef7;
+  --primary-dark: #3b6ef0;
+  --primary-light: #1a2a4a;
+  --primary-mid: #6b93f8;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+  --shadow: 0 4px 6px -1px rgba(0,0,0,.4), 0 2px 4px -1px rgba(0,0,0,.3);
+  --shadow-md: 0 10px 15px -3px rgba(0,0,0,.4), 0 4px 6px -2px rgba(0,0,0,.3);
+  --shadow-lg: 0 20px 25px -5px rgba(0,0,0,.45), 0 10px 10px -5px rgba(0,0,0,.3);
+  --shadow-xl: 0 25px 50px -12px rgba(0,0,0,.5);
+  --green-light: #0d2818;
+  --danger-light: #2d1515;
+}
+[data-theme="dark"] body { background: #161c2d; color: #e2eaf5; }
+[data-theme="dark"] .card,
+[data-theme="dark"] .event-card,
+[data-theme="dark"] .auth-card,
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .chat-window,
+[data-theme="dark"] .chat-bubble.bot,
+[data-theme="dark"] .filter-bar,
+[data-theme="dark"] .search-bar,
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea { background: #1e2740 !important; color: #e2eaf5 !important; border-color: #334068 !important; }
+[data-theme="dark"] #navbar { background: rgba(22,28,45,.95) !important; border-bottom: 1px solid #263354; }
+[data-theme="dark"] .nav-link { color: #b8c5d9 !important; }
+[data-theme="dark"] .nav-link:hover,
+[data-theme="dark"] .nav-link.active { color: #f0f4fc !important; }
+[data-theme="dark"] .section-title,
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3 { color: #f0f4fc; }
+[data-theme="dark"] .page-content { background: #161c2d !important; }
+[data-theme="dark"] .events-grid .event-card { background: #1e2740 !important; }
+[data-theme="dark"] .event-card:hover { background: #263354 !important; }
+[data-theme="dark"] .badge, [data-theme="dark"] .tag { background: #263354 !important; color: #b8c5d9 !important; }
+[data-theme="dark"] .input-group input,
+[data-theme="dark"] .chat-input { background: #1e2740 !important; color: #e2eaf5 !important; border-color: #334068 !important; }
+[data-theme="dark"] .chat-input-area { background: #1e2740 !important; border-color: #334068 !important; }
+[data-theme="dark"] .mobile-drawer { background: #1a2035 !important; }
+[data-theme="dark"] .drawer-link { color: #b8c5d9 !important; }
+[data-theme="dark"] .modal-overlay { background: rgba(10,14,26,.85) !important; }
+[data-theme="dark"] .stat-card { background: #1e2740 !important; }
+[data-theme="dark"] .filter-tab { background: #1e2740 !important; color: #9aaac8 !important; }
+[data-theme="dark"] .filter-tab.active { background: var(--primary) !important; color: #fff !important; }
+[data-theme="dark"] .loading-overlay { background: #161c2d !important; }
+[data-theme="dark"] .notification-panel { background: #1e2740 !important; border-color: #334068 !important; }
+[data-theme="dark"] .chat-suggest-btn { background: #263354 !important; color: #b8c5d9 !important; border-color: #334068 !important; }
+[data-theme="dark"] .chat-mic-btn { background: #263354 !important; color: #b8c5d9 !important; }
+[data-theme="dark"] select option { background: #1e2740; }
   --transition-slow: all .4s cubic-bezier(.4,0,.2,1);
   --nav-h: 72px;
   --font: 'Inter', sans-serif;
@@ -1623,6 +1687,13 @@ footer{
   <div class="nav-actions" id="navActions">
     <!-- injected by JS -->
   </div>
+  <button id="darkModeToggle" onclick="toggleDarkMode()" title="Toggle dark mode" style="
+    background:none;border:none;cursor:pointer;padding:6px 8px;border-radius:8px;
+    font-size:1.1rem;color:var(--gray-600);transition:var(--transition);margin-right:4px;
+    display:flex;align-items:center;gap:6px;
+  ">
+    <i class="fas fa-moon" id="darkModeIcon"></i>
+  </button>
   <div class="hamburger" id="hamburger" onclick="toggleDrawer()">
     <span></span><span></span><span></span>
   </div>
@@ -4433,19 +4504,36 @@ document.addEventListener('click', e=>{
 /* ============================================================
    INIT
 ============================================================ */
+function toggleDarkMode(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('lsh_theme', newTheme);
+  const icon = document.getElementById('darkModeIcon');
+  if(icon){ icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon'; }
+}
+
+function applyStoredTheme(){
+  const stored = localStorage.getItem('lsh_theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = stored || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+  const icon = document.getElementById('darkModeIcon');
+  if(icon){ icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon'; }
+}
+
 function init(){
-  setTimeout(()=>{
-    document.getElementById('loadingOverlay').style.display='none';
-    // Check URL param for ref
-    const params=new URLSearchParams(window.location.search);
-    const page=params.get('page');
-    if(page && ['home','events','map','signup','signin'].includes(page)){
-      navigate(page);
-    } else {
-      const user=Session.getUser();
-      navigate(user?'home':'signin');
-    }
-  },1200);
+  applyStoredTheme();
+  document.getElementById('loadingOverlay').style.display='none';
+  // Check URL param for ref
+  const params=new URLSearchParams(window.location.search);
+  const page=params.get('page');
+  if(page && ['home','events','map','signup','signin'].includes(page)){
+    navigate(page);
+  } else {
+    const user=Session.getUser();
+    navigate(user?'home':'signin');
+  }
   // Scroll effect
   window.addEventListener('scroll',()=>{
     document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>10);
