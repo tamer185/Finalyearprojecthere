@@ -314,9 +314,10 @@ DB_CONFIG = {
     "password":         os.environ.get("DB_PASSWORD", "taml7677"),
     "database":         os.environ.get("DB_NAME", "SportsFinalyearproject"),
     "autocommit":       False,
-    "ssl_disabled":     os.environ.get("DB_HOST", "localhost") == "localhost",
+    "ssl_disabled":     os.environ.get("DB_HOST", "localhost") in ("localhost", "127.0.0.1"),
     "ssl_verify_cert":  False,
     "ssl_verify_identity": False,
+    "auth_plugin":      "mysql_native_password" if os.environ.get("DB_HOST", "localhost") in ("localhost", "127.0.0.1") else None,
 }
 
 
