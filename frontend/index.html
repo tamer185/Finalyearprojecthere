@@ -48,8 +48,10 @@
   --radius-xl: 24px;
   --radius-full: 9999px;
   --transition: all .2s cubic-bezier(.4,0,.2,1);
+  --transition-slow: all .4s cubic-bezier(.4,0,.2,1);
+  --nav-h: 72px;
+  --font: 'Inter', sans-serif;
 }
-
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;font-size:16px}
@@ -1621,7 +1623,6 @@ footer{
   <div class="nav-actions" id="navActions">
     <!-- injected by JS -->
   </div>
-
   <div class="hamburger" id="hamburger" onclick="toggleDrawer()">
     <span></span><span></span><span></span>
   </div>
@@ -2300,7 +2301,6 @@ function render(page){
     case 'map': root.innerHTML=renderMap(); initMap(); break;
     case 'chatbot': navigate('home'); openChat(); return;
     case 'eventDetail': root.innerHTML=renderEventDetail(currentEvent); attachDetailEvents(); break;
-    case 'myevents': renderMyEvents(root); break;
     case 'profile': root.innerHTML=renderProfile(); break;
     case 'admin': window.open('admin.html','_blank'); navigate('home'); return;
     case 'signin': root.innerHTML=renderSignIn(); attachSignInEvents(); break;
@@ -3139,135 +3139,6 @@ function sendChatMsg(msg){
     }, 800);
   }
 }
-
-/* ============================================================
-   MY EVENTS PAGE
-============================================================ */
-async function renderMyEvents(root){
-  const user=Session.getUser();
-  if(!user){navigate('signin');return;}
-
-  root.innerHTML=`
-  <div class="page-content" style="min-height:80vh;padding:2rem 1rem">
-    <div class="container" style="max-width:860px">
-      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem">
-        <button onclick="navigate('home')" style="background:none;border:none;cursor:pointer;color:var(--gray-500);font-size:1rem;padding:0">
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <div>
-          <h1 style="font-size:1.75rem;font-weight:800;color:var(--gray-900);margin:0">My Events</h1>
-          <p style="color:var(--gray-500);margin:0;font-size:.9rem">Events you've registered for</p>
-        </div>
-      </div>
-      <div id="myEventsContent" style="text-align:center;padding:3rem">
-        <div class="loading-spinner" style="width:36px;height:36px;margin:0 auto 1rem"></div>
-        <p style="color:var(--gray-500)">Loading your events…</p>
-      </div>
-    </div>
-  </div>`;
-
-  // Fetch registrations from backend
-  let regs = [];
-  try{
-    const res = await fetch(\`\${API}/api/my-registrations\`,{credentials:'include'});
-    if(res.ok) regs = await res.json();
-    else regs = Session.getUserRegistrations();
-  }catch(e){ regs = Session.getUserRegistrations(); }
-
-  const approved = regs.filter(r=>r.status==='approved');
-  const pending  = regs.filter(r=>r.status==='pending');
-  const rejected = regs.filter(r=>r.status==='rejected');
-
-  function regCard(r){
-    const statusColor = r.status==='approved'?'#dcfce7|#166534':r.status==='rejected'?'#fee2e2|#991b1b':'#fef3c7|#92400e';
-    const [bg,fg] = statusColor.split('|');
-    const statusIcon = r.status==='approved'?'fa-check-circle':r.status==='rejected'?'fa-times-circle':'fa-clock';
-    const statusLabel = r.status==='approved'?'Approved':r.status==='rejected'?'Rejected':'Pending Approval';
-    const date = r.event_date ? (typeof formatDate==='function'?formatDate(r.event_date):r.event_date) : '';
-    const time = (r.event_time||'').toString().slice(0,5);
-    const loc  = r.venue_name||r.venue_city||r.location||'Lebanon';
-    const sport = r.sport_category||r.sport||'';
-    const img = r.image_url||r.image||'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&q=80';
-    return \`
-    <div style="display:flex;gap:1rem;border:1px solid var(--gray-200);border-radius:var(--radius);overflow:hidden;
-      background:var(--white);box-shadow:var(--shadow-sm);transition:var(--transition)"
-      onmouseover="this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.boxShadow='var(--shadow-sm)'">
-      <div style="width:110px;min-width:110px;height:90px;overflow:hidden;flex-shrink:0">
-        <img src="\${img}" style="width:100%;height:100%;object-fit:cover" alt="\${r.event_title||'Event'}"
-          onerror="this.src='https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&q=80'">
-      </div>
-      <div style="padding:.75rem .75rem .75rem 0;flex:1;min-width:0">
-        <div style="font-weight:700;font-size:.95rem;color:var(--gray-900);margin-bottom:.3rem;
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\${r.event_title||'Event'}</div>
-        \${sport?'<div style="font-size:.78rem;color:var(--gray-500);margin-bottom:.2rem"><i class="fas fa-running" style="color:var(--primary)"></i> '+sport+'</div>':''}
-        \${date?'<div style="font-size:.78rem;color:var(--gray-500);margin-bottom:.2rem"><i class="fas fa-calendar-alt" style="color:var(--primary)"></i> '+date+(time?' at '+time:'')+'</div>':''}
-        <div style="font-size:.78rem;color:var(--gray-500);margin-bottom:.5rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          <i class="fas fa-map-marker-alt" style="color:var(--primary)"></i> \${loc}
-        </div>
-        <span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;font-weight:600;
-          background:\${bg};color:\${fg};border-radius:999px;padding:.2rem .7rem">
-          <i class="fas \${statusIcon}"></i> \${statusLabel}
-        </span>
-      </div>
-    </div>\`;
-  }
-
-  function section(title, icon, color, list){
-    if(list.length===0) return '';
-    return \`
-    <div style="margin-bottom:2rem">
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem">
-        <i class="fas \${icon}" style="color:\${color};font-size:1rem"></i>
-        <h3 style="font-weight:700;font-size:1rem;color:var(--gray-800);margin:0">\${title} <span style="font-size:.85rem;font-weight:500;color:var(--gray-400)">(\${list.length})</span></h3>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:.75rem">
-        \${list.map(r=>regCard(r)).join('')}
-      </div>
-    </div>\`;
-  }
-
-  const el = document.getElementById('myEventsContent');
-  if(!el) return;
-
-  if(regs.length===0){
-    el.innerHTML=\`
-    <div style="text-align:center;padding:3rem 1rem">
-      <i class="fas fa-calendar-times" style="font-size:3rem;color:var(--gray-300);display:block;margin-bottom:1rem"></i>
-      <h3 style="color:var(--gray-600);font-weight:700;margin-bottom:.5rem">No events yet</h3>
-      <p style="color:var(--gray-400);font-size:.9rem;margin-bottom:1.5rem">You haven't registered for any events.</p>
-      <button class="btn btn-primary" onclick="navigate('events')">
-        <i class="fas fa-search"></i> Browse Events
-      </button>
-    </div>\`;
-    return;
-  }
-
-  el.innerHTML=\`
-  <div style="display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap">
-    <div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:1rem;text-align:center;box-shadow:var(--shadow-sm)">
-      <div style="font-size:1.75rem;font-weight:800;color:var(--primary)">\${regs.length}</div>
-      <div style="font-size:.8rem;color:var(--gray-500);font-weight:500">Total</div>
-    </div>
-    <div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:1rem;text-align:center;box-shadow:var(--shadow-sm)">
-      <div style="font-size:1.75rem;font-weight:800;color:#16a34a">\${approved.length}</div>
-      <div style="font-size:.8rem;color:var(--gray-500);font-weight:500">Approved</div>
-    </div>
-    <div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:1rem;text-align:center;box-shadow:var(--shadow-sm)">
-      <div style="font-size:1.75rem;font-weight:800;color:#d97706">\${pending.length}</div>
-      <div style="font-size:.8rem;color:var(--gray-500);font-weight:500">Pending</div>
-    </div>
-    <div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:1rem;text-align:center;box-shadow:var(--shadow-sm)">
-      <div style="font-size:1.75rem;font-weight:800;color:#dc2626">\${rejected.length}</div>
-      <div style="font-size:.8rem;color:var(--gray-500);font-weight:500">Rejected</div>
-    </div>
-  </div>
-  \${section('Approved Events','fa-check-circle','#16a34a',approved)}
-  \${section('Pending Approval','fa-clock','#d97706',pending)}
-  \${section('Rejected','fa-times-circle','#dc2626',rejected)}
-  \${renderFooter()}
-  \`;
-}
-
 
 /* ============================================================
    PROFILE PAGE
@@ -4563,16 +4434,18 @@ document.addEventListener('click', e=>{
    INIT
 ============================================================ */
 function init(){
-  document.getElementById('loadingOverlay').style.display='none';
-  // Check URL param for ref
-  const params=new URLSearchParams(window.location.search);
-  const page=params.get('page');
-  if(page && ['home','events','map','signup','signin'].includes(page)){
-    navigate(page);
-  } else {
-    const user=Session.getUser();
-    navigate(user?'home':'signin');
-  }
+  setTimeout(()=>{
+    document.getElementById('loadingOverlay').style.display='none';
+    // Check URL param for ref
+    const params=new URLSearchParams(window.location.search);
+    const page=params.get('page');
+    if(page && ['home','events','map','signup','signin'].includes(page)){
+      navigate(page);
+    } else {
+      const user=Session.getUser();
+      navigate(user?'home':'signin');
+    }
+  },1200);
   // Scroll effect
   window.addEventListener('scroll',()=>{
     document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>10);
