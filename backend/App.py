@@ -1,5 +1,5 @@
 """
-Lebanon Sports Hub — Flask Backend
+Lebanon Sports Hub -- Flask Backend
 Start: python App.py
 API base: http://localhost:5000/api
 
@@ -31,7 +31,7 @@ try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    pass  # python-dotenv not installed — use real env vars instead
+    pass  # python-dotenv not installed -- use real env vars instead
 
 
 
@@ -50,7 +50,7 @@ except ImportError:
 def chat_proxy():
     """
     Proxies messages to the Anthropic API.
-    The API key lives here on the server — never sent to the browser.
+    The API key lives here on the server -- never sent to the browser.
     """
     try:
         data = request.get_json()
@@ -115,15 +115,15 @@ def debug():
         return jsonify({"error": str(e)}), 500
 
 
-# ── Email config (set these as env vars or fill directly) ───────────────────
+# -- Email config (set these as env vars or fill directly) -------------------
 MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "tamernasr1717@gmail.com")
 MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")   # Gmail App Password
 
-# ── In-memory password-reset store  {email: {code, expires}} ────────────────
+# -- In-memory password-reset store  {email: {code, expires}} ----------------
 # Codes expire after 10 minutes. Cleared after successful reset.
 _reset_codes: dict = {}
 
-# ── In-memory notification store  {user_id: [notif_dict, …]} ─────────────────
+# -- In-memory notification store  {user_id: [notif_dict, -]} -----------------
 _user_notifications: dict = {}
 
 def add_user_notification(user_id: int, notif_type: str, title: str, message: str):
@@ -144,7 +144,7 @@ def send_status_email(to_email: str, full_name: str, status: str):
     """Email a user when their account is approved or rejected by an admin."""
     approved = status == "approved"
     color    = "#10b981" if approved else "#ef4444"
-    icon     = "✅" if approved else "❌"
+    icon     = "OK" if approved else "X"
     heading  = "Account Approved!" if approved else "Registration Not Approved"
     body_msg = (
         "Great news! Your account on Lebanon Sports Hub has been <strong>approved</strong>. "
@@ -168,7 +168,7 @@ def send_status_email(to_email: str, full_name: str, status: str):
         <tr>
           <td style="background:linear-gradient(135deg,#1a56db,#3b82f6);
                      padding:32px 40px;text-align:center">
-            <div style="font-size:2rem;margin-bottom:8px">🏆</div>
+            <div style="font-size:2rem;margin-bottom:8px"></div>
             <h1 style="color:#ffffff;font-size:1.3rem;font-weight:800;margin:0">Lebanon Sports Hub</h1>
             <p style="color:rgba(255,255,255,.75);font-size:.85rem;margin:6px 0 0">Account Status Update</p>
           </td>
@@ -202,7 +202,7 @@ def send_status_email(to_email: str, full_name: str, status: str):
 </html>"""
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"Lebanon Sports Hub — {heading}"
+    msg["Subject"] = f"Lebanon Sports Hub -- {heading}"
     msg["From"]    = f"Lebanon Sports Hub <{MAIL_USERNAME}>"
     msg["To"]      = to_email
     msg.attach(MIMEText(html, "html"))
@@ -219,7 +219,7 @@ def send_status_email(to_email: str, full_name: str, status: str):
 def send_reset_email(to_email: str, code: str):
     """Send a styled HTML email with the 6-digit reset code via Gmail SMTP."""
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Lebanon Sports Hub — Password Reset Code"
+    msg["Subject"] = "Lebanon Sports Hub -- Password Reset Code"
     msg["From"]    = f"Lebanon Sports Hub <{MAIL_USERNAME}>"
     msg["To"]      = to_email
 
@@ -237,7 +237,7 @@ def send_reset_email(to_email: str, code: str):
         <tr>
           <td style="background:linear-gradient(135deg,#1a56db,#3b82f6);
                      padding:32px 40px;text-align:center">
-            <div style="font-size:2rem;margin-bottom:8px">🏆</div>
+            <div style="font-size:2rem;margin-bottom:8px"></div>
             <h1 style="color:#ffffff;font-size:1.3rem;font-weight:800;margin:0;
                        letter-spacing:-.02em">Lebanon Sports Hub</h1>
             <p style="color:rgba(255,255,255,.75);font-size:.85rem;margin:6px 0 0">
@@ -266,7 +266,7 @@ def send_reset_email(to_email: str, code: str):
               </div>
             </div>
             <p style="color:#9ca3af;font-size:.82rem;line-height:1.6;margin:0 0 8px">
-              ⚠️ If you didn't request this, please ignore this email — your
+              ! If you didn't request this, please ignore this email -- your
               password will not change.
             </p>
             <p style="color:#9ca3af;font-size:.82rem;line-height:1.6;margin:0">
@@ -293,7 +293,7 @@ def send_reset_email(to_email: str, code: str):
     msg.attach(MIMEText(html, "html"))
 
     if not MAIL_PASSWORD:
-        # No credentials set — print code to console for dev/testing
+        # No credentials set -- print code to console for dev/testing
         print(f"\n[DEV] Reset code for {to_email}: {code}\n")
         return
 
@@ -301,7 +301,7 @@ def send_reset_email(to_email: str, code: str):
         server.login(MAIL_USERNAME, MAIL_PASSWORD)
         server.sendmail(MAIL_USERNAME, to_email, msg.as_string())
 
-# ── DB config ──────────────────────────────────────────────────────────────────
+# -- DB config ------------------------------------------------------------------
 DB_CONFIG = {
     "host":             os.environ.get("DB_HOST", "localhost"),
     "port":             int(os.environ.get("DB_PORT", 3306)),
@@ -352,7 +352,7 @@ def index():
     })
 
 
-# ── Helper ─────────────────────────────────────────────────────────────────────
+# -- Helper ---------------------------------------------------------------------
 def log_action(cursor, admin_id, action, target_type=None, target_id=None):
     cursor.execute(
         "INSERT INTO activity_log (admin_id, action, target_type, target_id) "
@@ -361,9 +361,9 @@ def log_action(cursor, admin_id, action, target_type=None, target_id=None):
     )
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  AUTH — USERS
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
+#  AUTH -- USERS
+# ------------------------------------------------------------------------------
 
 @app.route("/api/check-status", methods=["GET"])
 def check_status():
@@ -448,7 +448,7 @@ def verify_email():
     if token not in _verification_tokens:
         return """<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;text-align:center;padding:60px;background:#f3f4f6;">
         <div style="background:#fff;border-radius:12px;padding:40px;max-width:480px;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.08);">
-        <div style="font-size:48px;margin-bottom:16px;">❌</div>
+        <div style="font-size:48px;margin-bottom:16px;">X</div>
         <h2 style="color:#dc2626;">Link Expired or Invalid</h2>
         <p style="color:#6b7280;">This verification link has expired or already been used. Please register again.</p>
         <a href="https://files-tawny-seven.vercel.app" style="display:inline-block;margin-top:20px;background:#3b82f6;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;">Back to App</a>
@@ -470,7 +470,7 @@ def verify_email():
         cur.close(); db.close()
         return """<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;text-align:center;padding:60px;background:#f3f4f6;">
         <div style="background:#fff;border-radius:12px;padding:40px;max-width:480px;margin:0 auto;">
-        <div style="font-size:48px;">⚠️</div>
+        <div style="font-size:48px;">!</div>
         <h2 style="color:#f59e0b;">Already Registered</h2>
         <p style="color:#6b7280;">This email is already registered. Try signing in.</p>
         <a href="https://files-tawny-seven.vercel.app" style="display:inline-block;margin-top:20px;background:#3b82f6;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;">Sign In</a>
@@ -478,14 +478,17 @@ def verify_email():
     finally:
         cur.close(); db.close()
 
-    return """<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;text-align:center;padding:60px;background:#f3f4f6;">
-    <div style="background:#fff;border-radius:12px;padding:40px;max-width:480px;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.08);">
-    <div style="font-size:48px;margin-bottom:16px;">✅</div>
-    <h2 style="color:#16a34a;">Email Verified!</h2>
-    <p style="color:#374151;">Your email has been verified successfully, <strong>""" + data["full_name"] + """</strong>!</p>
-    <p style="color:#6b7280;font-size:14px;">Your account is now pending admin approval. You'll receive another email once approved.</p>
-    <a href="https://files-tawny-seven.vercel.app" style="display:inline-block;margin-top:24px;background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;">🏆 Go to Lebanon Sports Hub</a>
-    </div></body></html>
+    name_safe = data["full_name"].replace("<","&lt;").replace(">","&gt;")
+    return (
+        '<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;text-align:center;padding:60px;background:#f3f4f6;">'
+        '<div style="background:#fff;border-radius:12px;padding:40px;max-width:480px;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.08);">'
+        '<div style="font-size:48px;margin-bottom:16px;">OK</div>'
+        '<h2 style="color:#16a34a;">Email Verified!</h2>'
+        '<p style="color:#374151;">Your email has been verified successfully, <strong>' + name_safe + '</strong>!</p>'
+        '<p style="color:#6b7280;font-size:14px;">Your account is now pending admin approval. You will receive another email once approved.</p>'
+        '<a href="https://files-tawny-seven.vercel.app" style="display:inline-block;margin-top:24px;background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;">Go to Lebanon Sports Hub</a>'
+        '</div></body></html>'
+    )
 
 
 @app.route("/api/login", methods=["POST"])
@@ -516,9 +519,9 @@ def logout():
     return jsonify({"message": "Logged out"})
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  PASSWORD RESET  (3-step: request code → verify → reset)
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
+#  PASSWORD RESET  (3-step: request code - verify - reset)
+# ------------------------------------------------------------------------------
 
 def send_verification_email(to_email: str, full_name: str, token: str):
     """Send email verification link."""
@@ -529,25 +532,25 @@ def send_verification_email(to_email: str, full_name: str, token: str):
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px;">
     <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
       <tr><td style="background:linear-gradient(135deg,#1e40af,#3b82f6);padding:32px 40px;text-align:center;">
-        <h1 style="color:#fff;margin:0;font-size:22px;">🏆 Lebanon Sports Hub</h1>
+        <h1 style="color:#fff;margin:0;font-size:22px;">Lebanon Sports Hub</h1>
         <p style="color:rgba(255,255,255,.85);margin:8px 0 0;font-size:14px;">Verify Your Email Address</p>
       </td></tr>
       <tr><td style="padding:36px 40px;">
         <p style="font-size:16px;color:#111;">Hi <strong>{full_name}</strong>,</p>
         <p style="color:#374151;line-height:1.6;">Thanks for registering! Please verify your email address to complete your registration.</p>
         <div style="text-align:center;margin:32px 0;">
-          <a href="{verify_link}" style="background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:bold;">✅ Verify My Email</a>
+          <a href="{verify_link}" style="background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:bold;">Verify My Email</a>
         </div>
-        <p style="color:#6b7280;font-size:13px;">This link expires in <strong>24 hours</strong>. If you didn't create this account, ignore this email.</p>
+        <p style="color:#6b7280;font-size:13px;">This link expires in <strong>24 hours</strong>. If you did not create this account, ignore this email.</p>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
-        <p style="color:#9ca3af;font-size:12px;text-align:center;">Lebanon Sports Hub · Connecting Lebanon through Sport</p>
+        <p style="color:#9ca3af;font-size:12px;text-align:center;">Lebanon Sports Hub - Connecting Lebanon through Sport</p>
       </td></tr>
     </table>
   </td></tr></table>
 </body></html>"""
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Lebanon Sports Hub — Verify Your Email"
+    msg["Subject"] = "Lebanon Sports Hub -- Verify Your Email"
     msg["From"]    = f"Lebanon Sports Hub <{MAIL_USERNAME}>"
     msg["To"]      = to_email
     msg.attach(MIMEText(html, "html"))
@@ -563,7 +566,7 @@ def send_verification_email(to_email: str, full_name: str, token: str):
 
 @app.route("/api/forgot-password", methods=["POST"])
 def forgot_password():
-    """Step 1 — generate a 6-digit code and email it to the user."""
+    """Step 1 -- generate a 6-digit code and email it to the user."""
     data  = request.get_json() or {}
     email = data.get("email", "").strip().lower()
 
@@ -596,7 +599,7 @@ def forgot_password():
 
 @app.route("/api/verify-reset-code", methods=["POST"])
 def verify_reset_code():
-    """Step 2 — check the code before letting the user set a new password."""
+    """Step 2 -- check the code before letting the user set a new password."""
     data  = request.get_json() or {}
     email = data.get("email", "").strip().lower()
     code  = data.get("code",  "").strip()
@@ -615,7 +618,7 @@ def verify_reset_code():
 
 @app.route("/api/reset-password", methods=["POST"])
 def reset_password():
-    """Step 3 — verify code one final time, then update the password."""
+    """Step 3 -- verify code one final time, then update the password."""
     data         = request.get_json() or {}
     email        = data.get("email",        "").strip().lower()
     code         = data.get("code",         "").strip()
@@ -670,9 +673,9 @@ def reset_password():
         cur.close(); db.close()
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  AUTH — ADMIN
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
+#  AUTH -- ADMIN
+# ------------------------------------------------------------------------------
 
 @app.route("/api/admin/login", methods=["POST"])
 def admin_login():
@@ -704,9 +707,9 @@ def admin_required(f):
     return decorated
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 #  EVENTS
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 
 @app.route("/api/events", methods=["GET"])
 def get_events():
@@ -802,9 +805,9 @@ def delete_event(event_id):
     return jsonify({"message": "Event cancelled"})
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 #  EVENT REGISTRATIONS
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 
 @app.route("/api/register-for-event", methods=["POST"])
 def register_for_frontend_event():
@@ -921,7 +924,7 @@ def update_registration(reg_id, action):
     status = "approved" if action == "approve" else "rejected"
     db = get_db()
 
-    # ── Fetch registration + user info BEFORE updating ─────────────────────────
+    # -- Fetch registration + user info BEFORE updating -------------------------
     cur_info = db.cursor(dictionary=True)
     cur_info.execute("""
         SELECT r.user_id, r.event_title, r.event_ref,
@@ -939,7 +942,7 @@ def update_registration(reg_id, action):
                "registration", reg_id)
     db.commit(); cur.close(); db.close()
 
-    # ── Push in-app notification to the user ───────────────────────────────────
+    # -- Push in-app notification to the user -----------------------------------
     if reg_info and reg_info.get("user_id"):
         event_name = reg_info.get("event_title") or reg_info.get("event_ref") or "the event"
         if status == "approved":
@@ -960,9 +963,9 @@ def update_registration(reg_id, action):
     return jsonify({"message": f"Registration {status}"})
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 #  MEMBERS (admin)
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 
 @app.route("/api/admin/members", methods=["GET"])
 @admin_required
@@ -997,7 +1000,7 @@ def update_member(user_id, action):
                "user", user_id)
     db.commit(); cur.close(); cur2.close(); db.close()
 
-    # ── Push in-app notification ──────────────────────────────────────────────
+    # -- Push in-app notification ----------------------------------------------
     if target_user:
         if status == "approved":
             add_user_notification(
@@ -1013,7 +1016,7 @@ def update_member(user_id, action):
                 "Registration Not Approved",
                 "Your registration was not approved. Please contact our support team for more information.",
             )
-        # ── Send email notification (non-blocking) ────────────────────────────
+        # -- Send email notification (non-blocking) ----------------------------
         try:
             send_status_email(target_user["email"], target_user["full_name"], status)
         except Exception as e:
@@ -1022,9 +1025,9 @@ def update_member(user_id, action):
     return jsonify({"message": f"Member {status}"})
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 #  IN-APP NOTIFICATIONS
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 
 @app.route("/api/my-notifications", methods=["GET"])
 def get_my_notifications():
@@ -1057,9 +1060,9 @@ def clear_notifications():
     return jsonify({"message": "Cleared"})
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 #  SPORTS CATEGORIES & VENUES (public)
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 
 @app.route("/api/sports", methods=["GET"])
 def get_sports():
@@ -1082,9 +1085,9 @@ def get_venues():
     return jsonify(data)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 #  ACTIVITY LOG (admin)
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
 
 @app.route("/api/admin/activity", methods=["GET"])
 @admin_required
@@ -1104,9 +1107,9 @@ def get_activity():
     return jsonify(rows)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  ONE-TIME HELPER — set real admin password hash
-# ══════════════════════════════════════════════════════════════════════════════
+# ------------------------------------------------------------------------------
+#  ONE-TIME HELPER -- set real admin password hash
+# ------------------------------------------------------------------------------
 
 def set_admin_password(email, plain_password):
     pw_hash = generate_password_hash(plain_password)
