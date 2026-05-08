@@ -318,6 +318,15 @@ DB_CONFIG = {
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
 
+# In-memory verification tokens: {token: {email, full_name, password_hash, phone, sport_interest, expires}}
+_verification_tokens = {}
+
+def _clean_expired_tokens():
+    now = datetime.datetime.utcnow()
+    expired = [k for k, v in _verification_tokens.items() if v["expires"] < now]
+    for k in expired:
+        del _verification_tokens[k]
+
 
 @app.route("/")
 def index():
@@ -377,22 +386,108 @@ def register():
     if not all(data.get(k) for k in required):
         return jsonify({"error": "full_name, email and password are required"}), 400
 
-    pw_hash = generate_password_hash(data["password"])
-    db = get_db()
-    cur = db.cursor()
+    email = data["email"].strip().lower()
+    full_name = data["full_name"].strip()
+    password = data["password"]
+
+    # Basic email format validation
+    import re as _re
+    if not _re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        return jsonify({"error": "Invalid email address format"}), 400
+
+    # Password strength check
+    if len(password) < 8:
+        return jsonify({"error": "Password must be at least 8 characters"}), 400
+
+    # Check if email already exists (verified or pending verification)
+    db = get_db(); cur = db.cursor(dictionary=True)
+    cur.execute("SELECT id, status FROM users WHERE email=%s", (email,))
+    existing = cur.fetchone()
+    cur.close(); db.close()
+
+    if existing:
+        return jsonify({"error": "This email is already registered. Try signing in or reset your password."}), 409
+
+    # Check if already pending verification
+    _clean_expired_tokens()
+    already_pending = any(v["email"] == email for v in _verification_tokens.values())
+    if already_pending:
+        return jsonify({"error": "A verification email was already sent to this address. Please check your inbox."}), 409
+
+    # Generate verification token
+    import secrets
+    token = secrets.token_urlsafe(32)
+    pw_hash = generate_password_hash(password)
+
+    _verification_tokens[token] = {
+        "email": email,
+        "full_name": full_name,
+        "password_hash": pw_hash,
+        "phone": data.get("phone", ""),
+        "sport_interest": data.get("sport_interest", ""),
+        "expires": datetime.datetime.utcnow() + datetime.timedelta(hours=24),
+    }
+
+    # Send verification email
+    try:
+        send_verification_email(email, full_name, token)
+    except Exception as e:
+        del _verification_tokens[token]
+        print(f"Email send error: {e}")
+        return jsonify({"error": "Failed to send verification email. Please check your email address."}), 500
+
+    return jsonify({
+        "message": f"Verification email sent to {email}. Please check your inbox and click the link to complete registration.",
+        "email": email
+    }), 200
+
+
+@app.route("/api/verify-email", methods=["GET"])
+def verify_email():
+    token = request.args.get("token", "")
+    _clean_expired_tokens()
+
+    if token not in _verification_tokens:
+        return """<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;text-align:center;padding:60px;background:#f3f4f6;">
+        <div style="background:#fff;border-radius:12px;padding:40px;max-width:480px;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+        <div style="font-size:48px;margin-bottom:16px;">❌</div>
+        <h2 style="color:#dc2626;">Link Expired or Invalid</h2>
+        <p style="color:#6b7280;">This verification link has expired or already been used. Please register again.</p>
+        <a href="https://files-tawny-seven.vercel.app" style="display:inline-block;margin-top:20px;background:#3b82f6;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;">Back to App</a>
+        </div></body></html>""", 400
+
+    data = _verification_tokens.pop(token)
+
+    # Insert user into DB
+    db = get_db(); cur = db.cursor()
     try:
         cur.execute(
             "INSERT INTO users (full_name, email, password_hash, phone, sport_interest) "
             "VALUES (%s,%s,%s,%s,%s)",
-            (data["full_name"], data["email"], pw_hash,
+            (data["full_name"], data["email"], data["password_hash"],
              data.get("phone"), data.get("sport_interest")),
         )
         db.commit()
-        return jsonify({"message": "Registration successful. Awaiting admin approval."}), 201
     except mysql.connector.IntegrityError:
-        return jsonify({"error": "Email already registered"}), 409
+        cur.close(); db.close()
+        return """<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;text-align:center;padding:60px;background:#f3f4f6;">
+        <div style="background:#fff;border-radius:12px;padding:40px;max-width:480px;margin:0 auto;">
+        <div style="font-size:48px;">⚠️</div>
+        <h2 style="color:#f59e0b;">Already Registered</h2>
+        <p style="color:#6b7280;">This email is already registered. Try signing in.</p>
+        <a href="https://files-tawny-seven.vercel.app" style="display:inline-block;margin-top:20px;background:#3b82f6;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;">Sign In</a>
+        </div></body></html>""", 409
     finally:
         cur.close(); db.close()
+
+    return """<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;text-align:center;padding:60px;background:#f3f4f6;">
+    <div style="background:#fff;border-radius:12px;padding:40px;max-width:480px;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+    <div style="font-size:48px;margin-bottom:16px;">✅</div>
+    <h2 style="color:#16a34a;">Email Verified!</h2>
+    <p style="color:#374151;">Your email has been verified successfully, <strong>""" + data["full_name"] + """</strong>!</p>
+    <p style="color:#6b7280;font-size:14px;">Your account is now pending admin approval. You'll receive another email once approved.</p>
+    <a href="https://files-tawny-seven.vercel.app" style="display:inline-block;margin-top:24px;background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;">🏆 Go to Lebanon Sports Hub</a>
+    </div></body></html>
 
 
 @app.route("/api/login", methods=["POST"])
@@ -426,6 +521,47 @@ def logout():
 # ══════════════════════════════════════════════════════════════════════════════
 #  PASSWORD RESET  (3-step: request code → verify → reset)
 # ══════════════════════════════════════════════════════════════════════════════
+
+def send_verification_email(to_email: str, full_name: str, token: str):
+    """Send email verification link."""
+    base_url = os.environ.get("FRONTEND_URL", "https://files-tawny-seven.vercel.app")
+    verify_link = f"{base_url}/api/verify-email?token={token}"
+    html = f"""
+<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 20px;">
+    <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+      <tr><td style="background:linear-gradient(135deg,#1e40af,#3b82f6);padding:32px 40px;text-align:center;">
+        <h1 style="color:#fff;margin:0;font-size:22px;">🏆 Lebanon Sports Hub</h1>
+        <p style="color:rgba(255,255,255,.85);margin:8px 0 0;font-size:14px;">Verify Your Email Address</p>
+      </td></tr>
+      <tr><td style="padding:36px 40px;">
+        <p style="font-size:16px;color:#111;">Hi <strong>{full_name}</strong>,</p>
+        <p style="color:#374151;line-height:1.6;">Thanks for registering! Please verify your email address to complete your registration.</p>
+        <div style="text-align:center;margin:32px 0;">
+          <a href="{verify_link}" style="background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;padding:14px 36px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:bold;">✅ Verify My Email</a>
+        </div>
+        <p style="color:#6b7280;font-size:13px;">This link expires in <strong>24 hours</strong>. If you didn't create this account, ignore this email.</p>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
+        <p style="color:#9ca3af;font-size:12px;text-align:center;">Lebanon Sports Hub · Connecting Lebanon through Sport</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>"""
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Lebanon Sports Hub — Verify Your Email"
+    msg["From"]    = f"Lebanon Sports Hub <{MAIL_USERNAME}>"
+    msg["To"]      = to_email
+    msg.attach(MIMEText(html, "html"))
+
+    if not MAIL_PASSWORD:
+        print(f"\n[DEV] Verification email for {to_email}: {verify_link}\n")
+        return
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.sendmail(MAIL_USERNAME, to_email, msg.as_string())
+
 
 @app.route("/api/forgot-password", methods=["POST"])
 def forgot_password():
