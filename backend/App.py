@@ -17,6 +17,8 @@ from flask_cors import CORS
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import re
+import secrets
 import requests
 from mysql.connector import errorcode
 import random
@@ -47,50 +49,7 @@ except ImportError:
 
 
 
-def chat_proxy():
-    """
-    Proxies messages to the Anthropic API.
-    The API key lives here on the server -- never sent to the browser.
-    """
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
- 
-        messages    = data.get('messages', [])
-        system      = data.get('system', '')
-        max_tokens  = data.get('max_tokens', 800)
- 
-        anthropic_key = os.environ.get('ANTHROPIC_API_KEY', '')
-        if not anthropic_key:
-            return jsonify({'error': 'AI service not configured'}), 503
- 
-        response = requests.post(
-            'https://api.anthropic.com/v1/messages',
-            headers={
-                'Content-Type':         'application/json',
-                'x-api-key':            anthropic_key,
-                'anthropic-version':    '2023-06-01',
-            },
-            json={
-                'model':      'claude-haiku-4-5-20251001',   # cheapest model, perfect for chatbot
-                'max_tokens': max_tokens,
-                'system':     system,
-                'messages':   messages,
-            },
-            timeout=30
-        )
- 
-        if not response.ok:
-            return jsonify({'error': 'AI service error'}), response.status_code
- 
-        return jsonify(response.json()), 200
- 
-    except requests.exceptions.Timeout:
-        return jsonify({'error': 'Request timed out'}), 504
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
- 
+
 
 
 
@@ -105,6 +64,52 @@ def chat_proxy():
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "lsh_secret_2026")
 CORS(app, supports_credentials=True)
+
+
+@app.route("/api/chat", methods=["POST"])
+def chat_proxy():
+    """
+    Proxies messages to the Anthropic API.
+    The API key lives here on the server -- never sent to the browser.
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        messages    = data.get('messages', [])
+        system      = data.get('system', '')
+        max_tokens  = data.get('max_tokens', 800)
+
+        anthropic_key = os.environ.get('ANTHROPIC_API_KEY', '')
+        if not anthropic_key:
+            return jsonify({'error': 'AI service not configured'}), 503
+
+        response = requests.post(
+            'https://api.anthropic.com/v1/messages',
+            headers={
+                'Content-Type':         'application/json',
+                'x-api-key':            anthropic_key,
+                'anthropic-version':    '2023-06-01',
+            },
+            json={
+                'model':      'claude-haiku-4-5-20251001',
+                'max_tokens': max_tokens,
+                'system':     system,
+                'messages':   messages,
+            },
+            timeout=30
+        )
+
+        if not response.ok:
+            return jsonify({'error': 'AI service error'}), response.status_code
+
+        return jsonify(response.json()), 200
+
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Request timed out'}), 504
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 @app.route("/api/debug")
 def debug():
     try:
@@ -322,7 +327,7 @@ def get_db():
 _verification_tokens = {}
 
 def _clean_expired_tokens():
-    now = datetime.datetime.utcnow()
+    now = datetime.utcnow()
     expired = [k for k, v in _verification_tokens.items() if v["expires"] < now]
     for k in expired:
         del _verification_tokens[k]
@@ -423,7 +428,7 @@ def register():
         "password_hash": pw_hash,
         "phone": data.get("phone", ""),
         "sport_interest": data.get("sport_interest", ""),
-        "expires": datetime.datetime.utcnow() + datetime.timedelta(hours=24),
+        "expires": datetime.utcnow() + timedelta(hours=24),
     }
 
     # Send verification email
