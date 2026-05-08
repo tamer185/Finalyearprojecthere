@@ -212,26 +212,72 @@ async function generateResponse(message) {
     }
 
     // ── 6. My events ──
-    if (['my event','my registr','registered','my ticket','my booking'].some(t => lower.includes(t))) {
+    if (['my event','my registr','registered','my ticket','my booking','what i registered'].some(t => lower.includes(t))) {
         if (!user) return "Please sign in to see your events. Say **'sign in'**!";
-        const myRegs = Session.getUserRegistrations();
+        // Fetch fresh from backend
+        let myRegs = Session.getUserRegistrations();
+        try {
+            const res = await fetch(`${API}/api/my-registrations`, { credentials: 'include' });
+            if (res.ok) myRegs = await res.json();
+        } catch(e) {}
         const fn = user.name.split(' ')[0];
-        if (myRegs.length === 0) return `Hi **${fn}**! You haven't registered for any events yet.\n\n💡 Say "show all events" or "events in Beirut" to browse!`;
-        let r = `🎟️ **Your Registrations, ${fn}:**\n\n`;
-        myRegs.slice(0,6).forEach((reg,i) => {
-            const status = reg.status === 'approved' ? '✅' : reg.status === 'rejected' ? '❌' : '⏳';
-            r += `${i+1}. **${reg.event_title||'Event'}** ${status} ${reg.status||'pending'}\n`;
-        });
-        if (myRegs.length > 6) r += `\n_...and ${myRegs.length-6} more. Visit **My Events** page._`;
+        if (myRegs.length === 0) return `Hi **${fn}**! You haven't registered for any events yet.\n\n💡 Say "events in Beirut" to browse and register!`;
+        const approved = myRegs.filter(r => r.status === 'approved');
+        const pending  = myRegs.filter(r => r.status === 'pending');
+        const rejected = myRegs.filter(r => r.status === 'rejected');
+        let r = `🎟️ **${fn}'s Registrations (${myRegs.length} total):**\n\n`;
+        if (approved.length > 0) {
+            r += `✅ **Approved (${approved.length}):**\n`;
+            approved.forEach(reg => { r += `  • ${reg.event_title || 'Event'}\n`; });
+            r += '\n';
+        }
+        if (pending.length > 0) {
+            r += `⏳ **Pending Approval (${pending.length}):**\n`;
+            pending.forEach(reg => { r += `  • ${reg.event_title || 'Event'}\n`; });
+            r += '\n';
+        }
+        if (rejected.length > 0) {
+            r += `❌ **Rejected (${rejected.length}):**\n`;
+            rejected.forEach(reg => { r += `  • ${reg.event_title || 'Event'}\n`; });
+            r += '\n';
+        }
+        r += `💡 Visit **My Events** page for full details and to cancel registrations.`;
         return r;
     }
 
     // ── 7. Profile ──
-    if (['my profile','profile','account info','who am i','my account'].some(t => lower.includes(t))) {
+    if (['my profile','profile','account info','who am i','my account','about me','my info','my details'].some(t => lower.includes(t))) {
         if (!user) return "You're not signed in.\n\nSay **'sign in'** to log in or **'sign up'** to create an account!";
+        // Fetch fresh registrations from backend
+        let regs = Session.getUserRegistrations();
+        try {
+            const res = await fetch(`${API}/api/my-registrations`, { credentials: 'include' });
+            if (res.ok) regs = await res.json();
+        } catch(e) {}
         const favs = Session.get('favorites').length;
-        const regs = Session.getUserRegistrations().length;
-        return `👤 **${user.name}**\n\n📧 ${user.email}\n✅ Status: ${user.status === 'approved' ? 'Approved ✅' : user.status || 'Active'}\n⭐ Favorites: ${favs}\n🎟️ Registered: ${regs} event${regs!==1?'s':''}\n\n💡 Say "my events" to see registrations.`;
+        const approved = regs.filter(r => r.status === 'approved');
+        const pending  = regs.filter(r => r.status === 'pending');
+        const rejected = regs.filter(r => r.status === 'rejected');
+        let r = `👤 **Your Profile**\n\n`;
+        r += `**Name:** ${user.name}\n`;
+        r += `**Email:** ${user.email}\n`;
+        r += `**Status:** ${user.status === 'approved' ? '✅ Approved' : user.status || 'Active'}\n`;
+        r += `**Favorites:** ⭐ ${favs} event${favs!==1?'s':''}\n\n`;
+        r += `🎟️ **Your Registrations (${regs.length} total):**\n`;
+        r += `  ✅ Approved: ${approved.length}\n`;
+        r += `  ⏳ Pending: ${pending.length}\n`;
+        r += `  ❌ Rejected: ${rejected.length}\n`;
+        if (approved.length > 0) {
+            r += `\n**Approved Events:**\n`;
+            approved.slice(0,4).forEach(reg => { r += `  • ${reg.event_title || 'Event'}\n`; });
+            if (approved.length > 4) r += `  ...and ${approved.length-4} more\n`;
+        }
+        if (pending.length > 0) {
+            r += `\n**Pending Approval:**\n`;
+            pending.slice(0,3).forEach(reg => { r += `  • ${reg.event_title || 'Event'}\n`; });
+        }
+        r += `\n💡 Say "my events" for full details or "sign out" to log out.`;
+        return r;
     }
 
     // ── 8. How to register ──
