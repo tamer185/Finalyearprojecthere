@@ -12,6 +12,159 @@ const Chatbot = {
     lastMapQuery: null,
 };
 
+// ── Backend Event Cache ────────────────────────────────────────────────────────
+const EventCache = {
+    data: null,
+    lastFetch: null,
+    ttl: 5 * 60 * 1000, // 5 minutes
+
+    async get() {
+        if (this.data && this.lastFetch && (Date.now() - this.lastFetch < this.ttl)) {
+            return this.data;
+        }
+        try {
+            const res = await fetch(`${API}/api/events`, { credentials: 'include' });
+            if (res.ok) {
+                this.data = await res.json();
+                this.lastFetch = Date.now();
+                return this.data;
+            }
+        } catch (e) {}
+        return null;
+    },
+
+    // Merge backend events with frontend EVENTS array, backend takes priority
+    async getAll() {
+        const backend = await this.get();
+        if (backend && backend.length > 0) return backend;
+        return typeof EVENTS !== 'undefined' ? EVENTS : [];
+    }
+};
+
+// ── Smart Event Query Engine ──────────────────────────────────────────────────
+const EventQuery = {
+    REGIONS: ['beirut', 'mount lebanon', 'north lebanon', 'south lebanon',
+              'nabatieh', 'bekaa', 'baalbek', 'akkar', 'tripoli', 'jounieh',
+              'sidon', 'tyre', 'zahle', 'byblos', 'faraya'],
+
+    CITIES: {
+        'beirut': 'Beirut', 'tripoli': 'North Lebanon', 'jounieh': 'Mount Lebanon',
+        'sidon': 'South Lebanon', 'tyre': 'South Lebanon', 'zahle': 'Bekaa',
+        'byblos': 'Mount Lebanon', 'faraya': 'Mount Lebanon', 'baalbek': 'Baalbek-Hermel',
+        'saida': 'South Lebanon', 'nabatieh': 'Nabatieh', 'akkar': 'Akkar'
+    },
+
+    SPORTS: ['football', 'basketball', 'tennis', 'swimming', 'running', 'volleyball',
+             'cycling', 'boxing', 'skiing', 'triathlon', 'martial arts', 'padel',
+             'trail running', 'water sports', 'equestrian', 'athletics'],
+
+    detectLocation(msg) {
+        const lower = msg.toLowerCase();
+        for (const [city, region] of Object.entries(this.CITIES)) {
+            if (lower.includes(city)) return { city, region };
+        }
+        for (const r of this.REGIONS) {
+            if (lower.includes(r)) return { city: null, region: r };
+        }
+        return null;
+    },
+
+    detectSport(msg) {
+        const lower = msg.toLowerCase();
+        return this.SPORTS.find(s => lower.includes(s)) || null;
+    },
+
+    detectPriceRange(msg) {
+        const lower = msg.toLowerCase();
+        if (lower.includes('free')) return { max: 0 };
+        if (lower.includes('cheap') || lower.includes('budget')) return { max: 20 };
+        if (lower.includes('expensive') || lower.includes('premium')) return { min: 50 };
+        return null;
+    },
+
+    filterEvents(events, { location, sport, priceRange } = {}) {
+        let filtered = [...events];
+
+        if (location) {
+            const loc = location.city || location.region;
+            filtered = filtered.filter(e => {
+                const city = (e.venue_city || e.mohafaza || e.location || '').toLowerCase();
+                const title = (e.title || '').toLowerCase();
+                const sport_cat = (e.sport_category || e.sport || '').toLowerCase();
+                return city.includes(loc) || title.includes(loc);
+            });
+        }
+
+        if (sport) {
+            filtered = filtered.filter(e => {
+                const s = (e.sport_category || e.sport || '').toLowerCase();
+                return s.includes(sport);
+            });
+        }
+
+        if (priceRange) {
+            filtered = filtered.filter(e => {
+                const price = e.price || 0;
+                if (priceRange.max !== undefined && price > priceRange.max) return false;
+                if (priceRange.min !== undefined && price < priceRange.min) return false;
+                return true;
+            });
+        }
+
+        return filtered;
+    },
+
+    formatEvent(e) {
+        const date = e.event_date || e.date || '';
+        const time = e.event_time || e.time || '';
+        const location = e.venue_name || e.venue_city || (e.location ? e.location.split(',')[0] : '') || 'Lebanon';
+        const sport = e.sport_category || e.sport || '';
+        const price = e.price ? `$${e.price}` : (e.priceDisplay || 'Free');
+        const capacity = e.max_participants || e.capacity || '';
+        const title = e.title || 'Event';
+        return { date, time, location, sport, price, capacity, title };
+    },
+
+    buildResponse(events, context) {
+        if (events.length === 0) {
+            return `😕 No events found${context ? ` for "${context}"` : ''}. Try a different location or sport!
+
+Available regions: Beirut, Mount Lebanon, North Lebanon, South Lebanon, Bekaa`;
+        }
+
+        const shown = events.slice(0, 5);
+        let response = `🎯 Found **${events.length} event${events.length > 1 ? 's' : ''}**${context ? ` for "${context}"` : ''}:
+
+`;
+
+        shown.forEach((e, i) => {
+            const f = this.formatEvent(e);
+            response += `**${i + 1}. ${f.title}**
+`;
+            response += `   🏃 ${f.sport} | 📍 ${f.location}
+`;
+            if (f.date) response += `   📅 ${formatDate ? formatDate(f.date) : f.date}`;
+            if (f.time) response += ` at ${f.time.slice(0,5)}`;
+            if (f.date || f.time) response += '
+';
+            response += `   💰 ${f.price}`;
+            if (f.capacity) response += ` | 🏟️ ${f.capacity} spots`;
+            response += '
+
+';
+        });
+
+        if (events.length > 5) {
+            response += `_...and ${events.length - 5} more. Visit the Events page to see all!_
+`;
+        }
+
+        return response;
+    }
+};
+
+
+
 // Enhanced Chatbot Responses Database
 const CHATBOT_KNOWLEDGE = {
     // Authentication related responses
@@ -533,83 +686,65 @@ async function handleMapIntent(message) {
     return "🗺️ **Map opened!** I've loaded the interactive map with all 22 events across Lebanon.\n\nTry saying:\n• 'Show me Beirut on map'\n• 'Take me to Faraya'\n• 'Show football events on map'\n• 'Find Baalbek on map'";
 }
 
-// Generate event-related responses
-function getEventResponse(action, message) {
+// Generate event-related responses — now backend-powered
+async function getEventResponse(action, message) {
     const lower = message.toLowerCase();
-    
+    const allEvents = await EventCache.getAll();
+
     switch (action) {
-        case 'filter_by_sport':
-            const sport = CHATBOT_KNOWLEDGE.events.bySport.keywords.find(s => lower.includes(s));
-            if (sport) {
-                const events = EVENTS.filter(e => e.sport.toLowerCase().includes(sport));
-                if (events.length > 0) {
-                    let response = `🏅 **${events[0].sport} Events in Lebanon:**\n\n`;
-                    events.forEach(e => {
-                        response += `📌 **${e.title}**\n`;
-                        response += `   📍 ${e.location.split(',')[0]} | 📅 ${formatDate(e.date)}\n`;
-                        response += `   💰 ${e.priceDisplay || 'Free'} | 🏟️ Capacity: ${e.capacity}\n`;
-                        response += `   🗺️ Say "show ${e.title.split(' ').slice(0,2).join(' ')} on map" to see location!\n\n`;
-                    });
-                    response += `Click on any event card to view details and register! Or ask me to show them on the map.`;
-                    return response;
-                }
-                return `I couldn't find any ${sport} events. Try a different sport!`;
+        case 'filter_by_sport': {
+            const sport = EventQuery.detectSport(lower);
+            const location = EventQuery.detectLocation(lower);
+            const filtered = EventQuery.filterEvents(allEvents, { sport, location });
+            const ctx = [sport, location ? (location.city || location.region) : null].filter(Boolean).join(' in ');
+            return EventQuery.buildResponse(filtered, ctx || sport);
+        }
+
+        case 'filter_by_region': {
+            const location = EventQuery.detectLocation(lower);
+            if (location) {
+                const filtered = EventQuery.filterEvents(allEvents, { location });
+                return EventQuery.buildResponse(filtered, location.city || location.region);
             }
-            break;
-            
-        case 'filter_by_region':
-            const region = MOHAFAZAT.find(m => lower.includes(m.name.toLowerCase()));
-            if (region) {
-                const events = EVENTS.filter(e => e.mohafaza === region.name);
+            return '📍 Which region are you interested in? Try: Beirut, Mount Lebanon, Tripoli, Sidon, Bekaa...';
+        }
+
+        case 'show_prices': {
+            const ranges = [
+                { label: 'Free', events: allEvents.filter(e => !e.price || e.price === 0) },
+                { label: 'Budget (under $20)', events: allEvents.filter(e => e.price > 0 && e.price < 20) },
+                { label: 'Moderate ($20–$50)', events: allEvents.filter(e => e.price >= 20 && e.price <= 50) },
+                { label: 'Premium ($50+)', events: allEvents.filter(e => e.price > 50) },
+            ];
+            let r = '💰 **Events by Price:**\n\n';
+            ranges.forEach(({ label, events }) => {
                 if (events.length > 0) {
-                    let response = `${region.flag} **Events in ${region.name}:**\n\n`;
-                    events.forEach(e => {
-                        response += `📌 **${e.title}**\n`;
-                        response += `   🏃 ${e.sport} | 📅 ${formatDate(e.date)}\n`;
-                        response += `   💰 ${e.priceDisplay || 'Free'}\n`;
-                        response += `   🗺️ Say "show on map" to see all ${region.name} events!\n\n`;
-                    });
-                    return response;
-                }
-            }
-            break;
-            
-        case 'show_prices':
-            const priceRanges = {
-                'Free/Cheap (< $20)': EVENTS.filter(e => !e.price || e.price < 20),
-                'Moderate ($20-$50)': EVENTS.filter(e => e.price >= 20 && e.price <= 50),
-                'Premium ($50+)': EVENTS.filter(e => e.price > 50)
-            };
-            
-            let priceResponse = "💰 **Event Pricing Guide:**\n\n";
-            for (const [range, events] of Object.entries(priceRanges)) {
-                if (events.length > 0) {
-                    priceResponse += `**${range}:**\n`;
+                    r += `**${label}** (${events.length} events):\n`;
                     events.slice(0, 3).forEach(e => {
-                        priceResponse += `  • ${e.title}: ${e.priceDisplay || 'Free'}\n`;
+                        const f = EventQuery.formatEvent(e);
+                        r += `  • ${f.title}: ${f.price}\n`;
                     });
-                    if (events.length > 3) priceResponse += `  ...and ${events.length - 3} more\n`;
-                    priceResponse += '\n';
+                    if (events.length > 3) r += `  ...and ${events.length - 3} more\n`;
+                    r += '\n';
                 }
-            }
-            priceResponse += "💡 Tip: Say 'show me [event] on map' to see its location!";
-            return priceResponse;
-            
-        case 'show_dates':
-            const upcoming = EVENTS
-                .sort((a, b) => new Date(a.date) - new Date(b.date))
-                .slice(0, 5);
-            
-            let dateResponse = "📅 **Upcoming Events:**\n\n";
-            upcoming.forEach((e, i) => {
-                dateResponse += `${i + 1}. **${e.title}**\n`;
-                dateResponse += `   📆 ${formatDate(e.date)} at ${formatTime(e.time)}\n`;
-                dateResponse += `   📍 ${e.location.split(',')[0]}\n`;
-                dateResponse += `   🗺️ Say "show on map" to see location!\n\n`;
             });
-            return dateResponse;
+            return r;
+        }
+
+        case 'show_dates': {
+            const location = EventQuery.detectLocation(lower);
+            let events = location ? EventQuery.filterEvents(allEvents, { location }) : allEvents;
+            events = [...events].sort((a, b) => new Date(a.event_date || a.date) - new Date(b.event_date || b.date)).slice(0, 5);
+            if (events.length === 0) return '📅 No upcoming events found.';
+            let r = `📅 **Upcoming Events${location ? ' in ' + (location.city || location.region) : ''}:**\n\n`;
+            events.forEach((e, i) => {
+                const f = EventQuery.formatEvent(e);
+                r += `${i + 1}. **${f.title}**\n   📆 ${formatDate ? formatDate(f.date) : f.date} | 📍 ${f.location}\n\n`;
+            });
+            return r;
+        }
     }
-    
+
     return null;
 }
 
@@ -680,12 +815,22 @@ async function processMessage(message) {
             break;
             
         case 'events':
-            response = getEventResponse(intent.action, message);
+            response = await getEventResponse(intent.action, message);
             if (!response) {
                 response = CHATBOT_KNOWLEDGE.events[intent.subcategory]?.response;
             }
             if (!response) {
-                response = "I can help you find events! Try asking about a specific sport, region, or say 'show me events on map'!";
+                // Try smart location/sport detection even without explicit intent
+                const loc = EventQuery.detectLocation(message);
+                const spt = EventQuery.detectSport(message);
+                if (loc || spt) {
+                    const allEvs = await EventCache.getAll();
+                    const filtered = EventQuery.filterEvents(allEvs, { location: loc, sport: spt });
+                    const ctx = [spt, loc ? (loc.city || loc.region) : null].filter(Boolean).join(' in ');
+                    response = EventQuery.buildResponse(filtered, ctx);
+                } else {
+                    response = "I can help you find events! Try asking about a specific sport or location, like 'show me Beirut events' or 'find football events'!";
+                }
             }
             break;
             
@@ -695,21 +840,31 @@ async function processMessage(message) {
             
         default:
             // Try to find specific event by name
-            const eventMatch = EVENTS.find(e => 
-                message.toLowerCase().includes(e.title.toLowerCase().split(' ').slice(0, 2).join(' '))
-            );
-            if (eventMatch) {
-                response = `📅 **${eventMatch.title}**\n\n` +
-                          `🏃 **Sport:** ${eventMatch.sport}\n` +
-                          `📆 **Date:** ${formatDate(eventMatch.date)} at ${formatTime(eventMatch.time)}\n` +
-                          `📍 **Location:** ${eventMatch.location}\n` +
-                          `💰 **Price:** ${eventMatch.priceDisplay || 'Free'}\n` +
-                          `🏟️ **Capacity:** ${eventMatch.capacity} attendees\n` +
-                          `👤 **Organizer:** ${eventMatch.organizer}\n\n` +
-                          `${eventMatch.description}\n\n` +
-                          `💡 Say "show on map" to see this event's location!`;
+            // Smart fallback: try location/sport detection from backend
+            const loc = EventQuery.detectLocation(message);
+            const spt = EventQuery.detectSport(message);
+            if (loc || spt) {
+                const allEvs = await EventCache.getAll();
+                const filtered = EventQuery.filterEvents(allEvs, { location: loc, sport: spt });
+                const ctx = [spt, loc ? (loc.city || loc.region) : null].filter(Boolean).join(' in ');
+                response = EventQuery.buildResponse(filtered, ctx);
             } else {
-                response = getBotReply(message);
+                const allEvs = await EventCache.getAll();
+                const eventMatch = allEvs.find(e =>
+                    message.toLowerCase().includes((e.title || '').toLowerCase().split(' ').slice(0, 2).join(' '))
+                );
+                if (eventMatch) {
+                    const f = EventQuery.formatEvent(eventMatch);
+                    response = `📅 **${f.title}**\n\n` +
+                              `🏃 **Sport:** ${f.sport}\n` +
+                              `📆 **Date:** ${formatDate ? formatDate(f.date) : f.date} at ${f.time}\n` +
+                              `📍 **Location:** ${f.location}\n` +
+                              `💰 **Price:** ${f.price}\n` +
+                              (eventMatch.description ? `\n${eventMatch.description}\n\n` : '\n') +
+                              `💡 Say "show on map" to see this event's location!`;
+                } else {
+                    response = getBotReply(message);
+                }
             }
     }
     
