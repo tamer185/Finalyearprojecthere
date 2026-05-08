@@ -3127,19 +3127,17 @@ function sendChat(){
 
 function sendChatMsg(msg){
   addUserMsg(msg);
-  showTyping();
-  const delay=800+Math.random()*800;
-  setTimeout(()=>{
-    removeTyping();
-    const reply=getBotReply(msg);
-    addBotMsg(reply);
-    // Dynamic suggestions based on context
-    const m=msg.toLowerCase();
-    if(m.includes('football')) setSuggestions(['When is the match?','Beirut Stadium info','Register for event','Other sports']);
-    else if(m.includes('ski')) setSuggestions(['Faraya resort info','Winter events','Best time to visit','Register']);
-    else if(m.includes('map')) setSuggestions(['Events in Beirut','South Lebanon events','Baalbek events','All regions']);
-    else setSuggestions(['Upcoming events','All sports','Map view','How to register']);
-  },delay);
+  // Use SportBot if available (chatbot.js loaded), otherwise fallback
+  if(typeof processMessage === 'function'){
+    processMessage(msg);
+  } else {
+    showTyping();
+    setTimeout(()=>{
+      removeTyping();
+      addBotMsg(getBotReply(msg));
+      setSuggestions(['Upcoming events','All sports','Map view','How to register']);
+    }, 800);
+  }
 }
 
 /* ============================================================
