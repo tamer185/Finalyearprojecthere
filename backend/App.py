@@ -317,12 +317,17 @@ DB_CONFIG = {
     "ssl_disabled":     os.environ.get("DB_HOST", "localhost") in ("localhost", "127.0.0.1"),
     "ssl_verify_cert":  False,
     "ssl_verify_identity": False,
-    "auth_plugin":      "mysql_native_password" if os.environ.get("DB_HOST", "localhost") in ("localhost", "127.0.0.1") else None,
+    
 }
 
 
 def get_db():
-    return mysql.connector.connect(**DB_CONFIG)
+    cfg = dict(DB_CONFIG)
+    if cfg.get("ssl_disabled"):
+        cfg["auth_plugin"] = "mysql_native_password"
+    # Remove None values
+    cfg = {k: v for k, v in cfg.items() if v is not None}
+    return mysql.connector.connect(**cfg)
 
 # In-memory verification tokens: {token: {email, full_name, password_hash, phone, sport_interest, expires}}
 _verification_tokens = {}
