@@ -250,14 +250,21 @@ const CHATBOT_KNOWLEDGE = {
     general: {
         help: {
             keywords: ['help', 'what can you do', 'commands', 'features', 'capabilities'],
-            response: "🤖 **I can help you with:**\n\n" +
-                     "🗺️ **Map Navigation**: Open map, show locations, find events near you\n" +
-                     "🔐 **Authentication**: Sign in, sign up, sign out, reset password\n" +
-                     "📅 **Events**: Find events by sport, region, price, or date\n" +
-                     "💰 **Pricing**: Check ticket prices for any event\n" +
-                     "📍 **Locations**: Navigate to specific venues on the map\n" +
-                     "👤 **Profile**: View your account information\n\n" +
-                     "Try saying: 'show me Beirut events on map' or 'take me to skiing events'!",
+            response: "🤖 **SportBot — What I can do:**\n\n" +
+                     "🗺️ **Map Navigation**\n" +
+                     "  • \"Open map\" / \"Show map\"\n" +
+                     "  • \"Show me Beirut on map\"\n" +
+                     "  • \"Take me to Faraya\"\n\n" +
+                     "📅 **Find Events**\n" +
+                     "  • \"Football events in Beirut\"\n" +
+                     "  • \"Upcoming events\" / \"Events this month\"\n" +
+                     "  • \"Cheap events\" / \"Free events\"\n\n" +
+                     "🔐 **Account**\n" +
+                     "  • \"Sign in\" / \"Sign up\" / \"Sign out\"\n" +
+                     "  • \"My profile\" / \"My events\"\n" +
+                     "  • \"Reset password\"\n\n" +
+                     "🎤 **Voice** — Tap the mic icon to speak!\n\n" +
+                     "💡 **Pro tip:** Ask me anything naturally — \"what's happening in Tripoli this weekend?\"",
             action: null
         },
         mapHelp: {
@@ -754,15 +761,20 @@ function getProfileResponse() {
     if (user) {
         const favCount = Session.get('favorites').length;
         const regCount = Session.getUserRegistrations().length;
-        return `👤 **Your Profile:**\n\n` +
-               `**Name:** ${user.name}\n` +
-               `**Email:** ${user.email}\n` +
-               `**Status:** ${user.status || 'Active'}\n` +
-               `**Favorites:** ${favCount} events\n` +
-               `**Registered:** ${regCount} events\n\n` +
-               `Type 'my events' to see your registrations or ask me to show events on the map!`;
+        const firstName = user.name ? user.name.split(' ')[0] : '';
+        const hour = new Date().getHours();
+        const timeGreet = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+        return `👤 **${user.name || 'Your Profile'}**\n\n` +
+               `📧 **Email:** ${user.email}\n` +
+               `✅ **Status:** ${user.status === 'approved' ? '✅ Approved' : user.status || 'Active'}\n` +
+               `⭐ **Favorites:** ${favCount} event${favCount !== 1 ? 's' : ''}\n` +
+               `🎟️ **Registered:** ${regCount} event${regCount !== 1 ? 's' : ''}\n\n` +
+               `💡 **Quick actions:**\n` +
+               `• Say "my events" to see your registrations\n` +
+               `• Say "show favorites on map" to see saved events\n` +
+               `• Say "sign out" to log out\n`;
     }
-    return "You're not signed in. Would you like to sign in or create an account?";
+    return "You're not signed in yet.\n\nSay **'sign in'** to log in or **'sign up'** to create a new account!";
 }
 
 /* ============================================================
@@ -840,6 +852,26 @@ async function processMessage(message) {
             
         default:
             // Try to find specific event by name
+            // Handle "my events" / "my registrations"
+            const lower2 = message.toLowerCase();
+            if (lower2.includes('my event') || lower2.includes('my registration') || lower2.includes('registered')) {
+                const user2 = Session.getUser();
+                if (!user2) {
+                    response = "You need to sign in first to see your registrations. Say 'sign in' to continue!";
+                    break;
+                }
+                const myRegs = Session.getUserRegistrations();
+                if (myRegs.length === 0) {
+                    response = `Hi ${user2.name.split(' ')[0]}! You haven't registered for any events yet.\n\nSay 'show all events' or ask me about events to get started! 🎉`;
+                } else {
+                    response = `🎟️ **Your Registrations, ${user2.name.split(' ')[0]}:**\n\n`;
+                    myRegs.slice(0, 5).forEach((r, i) => {
+                        response += `${i + 1}. **${r.event_title || r.title || 'Event'}**\n   Status: ${r.status || 'pending'}\n\n`;
+                    });
+                    if (myRegs.length > 5) response += `_...and ${myRegs.length - 5} more. Visit My Events page to see all._`;
+                }
+                break;
+            }
             // Smart fallback: try location/sport detection from backend
             const loc = EventQuery.detectLocation(message);
             const spt = EventQuery.detectSport(message);
@@ -1127,12 +1159,14 @@ function getContextualSuggestions(lastMessage, intent) {
         ];
     }
     
+    const user = Session.getUser();
+    const firstName = user ? user.name.split(' ')[0] : null;
     return [
-        'Open map',
-        'Show me Beirut on map',
-        'Upcoming events',
-        'Event prices',
-        'Help'
+        '🗺️ Open map',
+        '📅 Upcoming events',
+        '🏅 Football events',
+        firstName ? `👤 My profile` : '🔐 Sign in',
+        '❓ Help'
     ];
 }
 
@@ -1156,14 +1190,17 @@ toggleChat = function() {
         setTimeout(() => {
             const user = Session.getUser();
             if (user) {
-                const personalizedGreeting = `👋 Hi ${user.name.split(' ')[0]}! I'm SportBot with map navigation! 🗺️\n\n` +
-                    `I can help you:\n\n` +
-                    `• 🗺️ **Navigate Map**: "Show me Beirut on map"\n` +
-                    `• 🔐 **Sign in/out** of your account\n` +
-                    `• 📅 **Find events** by sport or region\n` +
-                    `• 💰 **Check prices** for any event\n` +
-                    `• 📍 **Locate venues**: "Take me to Faraya"\n\n` +
-                    `What would you like to do?`;
+                const hour = new Date().getHours();
+                const timeGreet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+                const firstName = user.name ? user.name.split(' ')[0] : 'there';
+                const personalizedGreeting = `${timeGreet}, **${firstName}**! 👋 I'm SportBot, your Lebanon Sports Hub assistant.\n\n` +
+                    `Here's what I can do for you:\n\n` +
+                    `🗺️ **Map** — "Show me Beirut on map" / "Take me to Faraya"\n` +
+                    `📅 **Events** — "Football events" / "Events in Tripoli"\n` +
+                    `💰 **Prices** — "What are the cheap events?"\n` +
+                    `👤 **Account** — "My profile" / "Sign out"\n` +
+                    `🎤 **Voice** — Tap the mic to speak!\n\n` +
+                    `What would you like to explore today?`;
                 
                 const msgs = document.getElementById('chatMessages');
                 if (msgs) {
