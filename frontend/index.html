@@ -1683,7 +1683,9 @@ footer{
 /* ============================================================
    API + SESSION STORE
 ============================================================ */
-const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://127.0.0.1:5000' : 'https://files-tawny-seven.vercel.app';
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '')
+  ? 'http://127.0.0.1:5000'
+  : 'https://files-tawny-seven.vercel.app';
 
 // In-memory state
 let _currentUser  = null;

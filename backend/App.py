@@ -27,6 +27,7 @@ from datetime import datetime, timedelta
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from datetime import datetime
 
 # Load .env file if present (pip install python-dotenv)
 try:
@@ -106,15 +107,21 @@ def chat_proxy():
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "lsh_secret_2026")
+# CURRENT — too loose, fails with credentials in some browsers
 CORS(app, supports_credentials=True)
-@app.route("/api/debug")
-def debug():
-    try:
-        db = get_db()
-        db.close()
-        return jsonify({"status": "DB connected OK"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+
+# FIXED — explicitly whitelist all local origins
+CORS(app,
+     supports_credentials=True,
+     origins=[
+         "http://localhost:5000",
+         "http://127.0.0.1:5000",
+         "http://localhost:3000",
+         "http://localhost:5500",   # VS Code Live Server
+         "http://localhost:8080",
+         "null",                    # file:// protocol
+         "https://files-tawny-seven.vercel.app",
+     ])
 
 
 # -- Email config (set these as env vars or fill directly) -------------------
@@ -324,7 +331,7 @@ def get_db():
 _verification_tokens = {}
 
 def _clean_expired_tokens():
-    now = datetime.datetime.utcnow()
+    now = datetime.utcnow()  # ✅ Correct
     expired = [k for k, v in _verification_tokens.items() if v["expires"] < now]
     for k in expired:
         del _verification_tokens[k]
@@ -425,7 +432,7 @@ def register():
         "password_hash": pw_hash,
         "phone": data.get("phone", ""),
         "sport_interest": data.get("sport_interest", ""),
-        "expires": datetime.datetime.utcnow() + datetime.timedelta(hours=24),
+      "expires": datetime.utcnow() + timedelta(hours=24),
     }
 
     # Send verification email
