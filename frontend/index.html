@@ -2282,7 +2282,7 @@ function toggleDrawer(){
 /* ============================================================
    NAVIGATION
 ============================================================ */
-function navigate(page,data=null){
+async function navigate(page,data=null){
   if((currentPage==='pending'||currentPage==='rejected')&&page!=='pending'&&page!=='rejected') stopPendingPolling();
   if(page==='eventDetail' && data){currentEvent=data}
   currentPage=page;
