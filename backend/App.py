@@ -14,6 +14,7 @@ EMAIL SETUP (required for password reset & approval emails):
 
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
+from collections import defaultdict
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
@@ -109,6 +110,21 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "lsh_secret_2026")
 # CURRENT — too loose, fails with credentials in some browsers
 CORS(app, supports_credentials=True)
+
+# ── Simple in-memory rate limiter ────────────────────────────
+import time as _time
+_rate_store = defaultdict(list)
+
+def rate_limit(key, max_requests, window_seconds):
+    now = _time.time()
+    _rate_store[key] = [t for t in _rate_store[key] if now - t < window_seconds]
+    if len(_rate_store[key]) >= max_requests:
+        return False
+    _rate_store[key].append(now)
+    return True
+
+def get_client_ip():
+    return request.headers.get('X-Forwarded-For', request.remote_addr or 'unknown').split(',')[0].strip()
 
 # FIXED — explicitly whitelist all local origins
 CORS(app,
