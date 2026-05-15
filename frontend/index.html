@@ -2101,6 +2101,31 @@ priceDisplay:'$50',
   },
 ];
 
+const EVENT_ROLES = {
+  'ev-001': {spectator:true,participant:true,freeForParticipant:false},
+  'ev-002': {spectator:false,participant:true,freeForParticipant:true},
+  'ev-003': {spectator:true,participant:true,freeForParticipant:false},
+  'ev-004': {spectator:true,participant:true,freeForParticipant:false},
+  'ev-005': {spectator:false,participant:true,freeForParticipant:false},
+  'ev-006': {spectator:true,participant:true,freeForParticipant:false},
+  'ev-007': {spectator:true,participant:true,freeForParticipant:false},
+  'ev-008': {spectator:false,participant:true,freeForParticipant:true},
+  'ev-009': {spectator:true,participant:true,freeForParticipant:false},
+  'ev-010': {spectator:true,participant:true,freeForParticipant:false},
+  'ev-011': {spectator:false,participant:true,freeForParticipant:false},
+  'ev-012': {spectator:true,participant:true,freeForParticipant:false},
+  'ev-013': {spectator:true,participant:true,freeForParticipant:false},
+  'ev-014': {spectator:false,participant:true,freeForParticipant:false},
+  'ev-015': {spectator:false,participant:true,freeForParticipant:true},
+  'ev-016': {spectator:false,participant:true,freeForParticipant:true},
+  'ev-017': {spectator:true,participant:true,freeForParticipant:false},
+  'ev-018': {spectator:false,participant:true,freeForParticipant:false},
+  'ev-019': {spectator:true,participant:true,freeForParticipant:false},
+  'ev-020': {spectator:false,participant:true,freeForParticipant:false},
+  'ev-021': {spectator:false,participant:true,freeForParticipant:false},
+  'ev-022': {spectator:false,participant:true,freeForParticipant:false},
+};
+
 const MOHAFAZAT = [
   {name:'Beirut',flag:'🏙️',image:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80'},
   {name:'Mount Lebanon',flag:'⛰️',image:'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=80'},
@@ -2810,24 +2835,32 @@ function renderEventDetail(idOrObj){
             ${(()=>{
               if(!user) return `<button class="btn btn-lg" style="background:#fff;color:var(--primary);width:100%;justify-content:center;font-weight:700" onclick="navigate('signin')"><i class="fas fa-sign-in-alt"></i> Sign In to Register</button>`;
               const regInfo=Session.getRegistrationStatus(e.id);
-              if(!regInfo) return `
-<div style="margin-bottom:.75rem">
-  <p style="color:rgba(255,255,255,.9);font-size:.85rem;text-align:center;margin-bottom:.75rem;font-weight:600">How do you want to join?</p>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-    <button class="btn btn-lg" style="background:#fff;color:var(--primary);justify-content:center;font-weight:700;flex-direction:column;gap:.3rem;padding:1rem .5rem"
-      onclick="registerForEvent('${e.id}','spectator')">
+              if(!regInfo) {
+  const evCfg = (typeof EVENT_ROLES!=='undefined' && EVENT_ROLES[e.id]) || {spectator:true,participant:true,freeForParticipant:false};
+  const hasTwo = evCfg.spectator && evCfg.participant;
+  const cols = hasTwo ? '1fr 1fr' : '1fr';
+  let btns = '';
+  if(evCfg.spectator) {
+    btns += `<button class="btn btn-lg" style="background:#fff;color:var(--primary);justify-content:center;font-weight:700;flex-direction:column;gap:.3rem;padding:1rem .5rem" onclick="registerForEvent('${e.id}','spectator')">
       <i class="fas fa-eye" style="font-size:1.4rem"></i>
       <span style="font-size:.8rem">Watch</span>
       <span style="font-size:.7rem;opacity:.7;font-weight:400">As spectator</span>
-    </button>
-    <button class="btn btn-lg" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;justify-content:center;font-weight:700;flex-direction:column;gap:.3rem;padding:1rem .5rem"
-      onclick="registerForEvent('${e.id}','participant')">
+    </button>`;
+  }
+  if(evCfg.participant) {
+    const priceLabel = evCfg.freeForParticipant ? '<span style="font-size:.7rem;background:#22c55e;color:#fff;border-radius:4px;padding:1px 6px">FREE</span>' : '<span style="font-size:.7rem;opacity:.7;font-weight:400">As participant</span>';
+    btns += `<button class="btn btn-lg" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;justify-content:center;font-weight:700;flex-direction:column;gap:.3rem;padding:1rem .5rem" onclick="registerForEvent('${e.id}','participant')">
       <i class="fas fa-running" style="font-size:1.4rem"></i>
-      <span style="font-size:.8rem">Play</span>
-      <span style="font-size:.7rem;opacity:.7;font-weight:400">As participant</span>
-    </button>
-  </div>
-</div>`;
+      <span style="font-size:.8rem">Join & Play</span>
+      ${priceLabel}
+    </button>`;
+  }
+  return `<div style="margin-bottom:.75rem">
+    ${hasTwo ? '<p style="color:rgba(255,255,255,.9);font-size:.85rem;text-align:center;margin-bottom:.75rem;font-weight:600">How do you want to join?</p>' : '<p style="color:rgba(255,255,255,.9);font-size:.85rem;text-align:center;margin-bottom:.75rem;font-weight:600">Join this event:</p>'}
+    <div style="display:grid;grid-template-columns:${cols};gap:.75rem">${btns}</div>
+    ${evCfg.freeForParticipant ? '<p style="color:#86efac;font-size:.75rem;text-align:center;margin-top:.5rem">🆓 Free registration for participants!</p>' : ''}
+  </div>`;
+}
               if(regInfo.status==='approved') {
   const roleLabel = regInfo.role==='participant' ? '🏃 Playing' : '👁️ Watching';
   return `<button class="btn btn-lg" style="background:#22c55e;color:#fff;width:100%;justify-content:center;font-weight:700;cursor:default" disabled><i class="fas fa-check-circle"></i> Approved — ${roleLabel}</button><p style="text-align:center;font-size:.8rem;color:rgba(255,255,255,.85);margin-top:.5rem">Your spot is confirmed!</p>`;
