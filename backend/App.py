@@ -841,11 +841,19 @@ def register_for_frontend_event():
     user_id = session.get("user_id")
     event_ref   = data.get("event_ref")
     event_title = data.get("event_title", "")
+    role = data.get("role", "spectator")
+    if role not in ("spectator", "participant"):
+        role = "spectator"
 
     if not event_ref:
         return jsonify({"error": "event_ref is required"}), 400
 
     db = get_db(); cur = db.cursor(dictionary=True)
+    try:
+        cur.execute("ALTER TABLE event_registrations ADD COLUMN role VARCHAR(20) DEFAULT 'spectator'")
+        db.commit()
+    except Exception:
+        pass
 
     # Prevent duplicate registration
     if user_id:
@@ -860,12 +868,12 @@ def register_for_frontend_event():
     cur2 = db.cursor()
     cur2.execute("""
         INSERT INTO event_registrations
-          (event_ref, event_title, user_id, guest_name, guest_email, guest_phone)
-        VALUES (%s,%s,%s,%s,%s,%s)
+          (event_ref, event_title, user_id, guest_name, guest_email, guest_phone, role)
+        VALUES (%s,%s,%s,%s,%s,%s,%s)
     """, (event_ref, event_title, user_id,
-          data.get("name"), data.get("email"), data.get("phone")))
+          data.get("name"), data.get("email"), data.get("phone"), role))
     db.commit(); cur.close(); cur2.close(); db.close()
-    return jsonify({"message": "Registration submitted. Awaiting approval."}), 201
+    return jsonify({"message": "Registration submitted. Awaiting approval.", "role": role}), 201
 
 
 @app.route("/api/events/<int:event_id>/register", methods=["POST"])
@@ -895,7 +903,7 @@ def register_for_event(event_id):
         VALUES (%s,%s,%s,%s,%s)
     """, (event_id, user_id, data.get("name"), data.get("email"), data.get("phone")))
     db.commit(); cur.close(); cur2.close(); db.close()
-    return jsonify({"message": "Registration submitted. Awaiting approval."}), 201
+    return jsonify({"message": "Registration submitted. Awaiting approval.", "role": role}), 201
 
 
 @app.route("/api/my-registrations", methods=["GET"])

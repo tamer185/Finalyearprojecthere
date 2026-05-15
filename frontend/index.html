@@ -2810,10 +2810,31 @@ function renderEventDetail(idOrObj){
             ${(()=>{
               if(!user) return `<button class="btn btn-lg" style="background:#fff;color:var(--primary);width:100%;justify-content:center;font-weight:700" onclick="navigate('signin')"><i class="fas fa-sign-in-alt"></i> Sign In to Register</button>`;
               const regInfo=Session.getRegistrationStatus(e.id);
-              if(!regInfo) return `<button class="btn btn-lg" style="background:#fff;color:var(--primary);width:100%;justify-content:center;font-weight:700" onclick="registerForEvent('${e.id}')"><i class="fas fa-ticket-alt"></i> Register Now</button>`;
-              if(regInfo.status==='approved') return `<button class="btn btn-lg" style="background:#22c55e;color:#fff;width:100%;justify-content:center;font-weight:700;cursor:default" disabled><i class="fas fa-check-circle"></i> Registration Approved</button><p style="text-align:center;font-size:.8rem;color:rgba(255,255,255,.85);margin-top:.5rem">Your spot is confirmed!</p>`;
+              if(!regInfo) return `
+<div style="margin-bottom:.75rem">
+  <p style="color:rgba(255,255,255,.9);font-size:.85rem;text-align:center;margin-bottom:.75rem;font-weight:600">How do you want to join?</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+    <button class="btn btn-lg" style="background:#fff;color:var(--primary);justify-content:center;font-weight:700;flex-direction:column;gap:.3rem;padding:1rem .5rem"
+      onclick="registerForEvent('${e.id}','spectator')">
+      <i class="fas fa-eye" style="font-size:1.4rem"></i>
+      <span style="font-size:.8rem">Watch</span>
+      <span style="font-size:.7rem;opacity:.7;font-weight:400">As spectator</span>
+    </button>
+    <button class="btn btn-lg" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;justify-content:center;font-weight:700;flex-direction:column;gap:.3rem;padding:1rem .5rem"
+      onclick="registerForEvent('${e.id}','participant')">
+      <i class="fas fa-running" style="font-size:1.4rem"></i>
+      <span style="font-size:.8rem">Play</span>
+      <span style="font-size:.7rem;opacity:.7;font-weight:400">As participant</span>
+    </button>
+  </div>
+</div>`;
+              if(regInfo.status==='approved') {
+  const roleLabel = regInfo.role==='participant' ? '🏃 Playing' : '👁️ Watching';
+  return `<button class="btn btn-lg" style="background:#22c55e;color:#fff;width:100%;justify-content:center;font-weight:700;cursor:default" disabled><i class="fas fa-check-circle"></i> Approved — ${roleLabel}</button><p style="text-align:center;font-size:.8rem;color:rgba(255,255,255,.85);margin-top:.5rem">Your spot is confirmed!</p>`;
+}
               if(regInfo.status==='rejected') return `<button class="btn btn-lg" style="background:#ef4444;color:#fff;width:100%;justify-content:center;font-weight:700;cursor:default" disabled><i class="fas fa-times-circle"></i> Registration Rejected</button><p style="text-align:center;font-size:.8rem;color:rgba(255,255,255,.85);margin-top:.5rem">Contact support for more info.</p>`;
-              return `<button class="btn btn-lg" style="background:#f59e0b;color:#fff;width:100%;justify-content:center;font-weight:700;cursor:default" disabled><i class="fas fa-clock"></i> Pending Approval</button><p style="text-align:center;font-size:.8rem;color:rgba(255,255,255,.85);margin-top:.5rem">Awaiting admin review.</p>`;
+              const pendingRole = regInfo.role==='participant' ? '🏃 Playing' : '👁️ Watching';
+return `<button class="btn btn-lg" style="background:#f59e0b;color:#fff;width:100%;justify-content:center;font-weight:700;cursor:default" disabled><i class="fas fa-clock"></i> Pending — ${pendingRole}</button><p style="text-align:center;font-size:.8rem;color:rgba(255,255,255,.85);margin-top:.5rem">Awaiting admin review.</p>`;
             })()}
             <div class="detail-share">
               <button class="share-btn" title="Share on Facebook"><i class="fab fa-facebook-f"></i></button>
@@ -2911,7 +2932,7 @@ function attachDetailEvents(){
   },200);
 }
 
-async function registerForEvent(id){
+async function registerForEvent(id, role='spectator'){
   const user=Session.getUser();
   if(!user){navigate('signin');return;}
   const e=EVENTS.find(ev=>ev.id===id);
@@ -2919,16 +2940,18 @@ async function registerForEvent(id){
     toast(`You're already registered for "${e.title}"!`,'info',3000);
     return;
   }
+  const roleLabel = role==='participant' ? 'as a Player' : 'as a Spectator';
+  const roleIcon  = role==='participant' ? '🏃' : '👁️';
   try{
     const res=await fetch(`${API}/api/register-for-event`,{
       method:'POST',credentials:'include',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({event_ref:id,event_title:e.title,name:user.name,email:user.email})
+      body:JSON.stringify({event_ref:id,event_title:e.title,name:user.name,email:user.email,role})
     });
     const data=await res.json();
     if(!res.ok)throw new Error(data.error||'Registration failed');
     await _loadUserRegs();
-    toast(`✅ Registered for "${e.title}"! Awaiting admin approval.`,'success',4000);
+    toast(`${roleIcon} Registered for "${e.title}" ${roleLabel}! Awaiting admin approval.`,'success',4000);
     navigate('eventDetail',id);
   }catch(err){
     toast(err.message,'error',4000);
