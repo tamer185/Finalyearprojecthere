@@ -1735,7 +1735,7 @@ async function _loadUserRegs(){
 }
 
 /* ============================================================
-   EVENTS DATA — 22 Events
+   EVENTS DATA — 25 Events
 ============================================================ */
 const EVENTS = [
   /* BEIRUT */
@@ -2101,6 +2101,55 @@ priceDisplay:'$50',
     priceDisplay:'$40',
     isNew:true,
   },
+  /* FREE EVENTS */
+  {
+    id:'ev-023',
+    mohafaza:'Beirut',
+    title:'Beirut Community Fun Run 2026',
+    description:'A free community running event open to all ages and fitness levels. Run 5km or 10km along the beautiful Beirut Corniche. No registration fee — just show up and run! Water stations, live music, and medals for all finishers.',
+    sport:'Running',sportIcon:'🏃',
+    date:'2026-09-20',time:'07:30',
+    location:'Corniche Beirut, Beirut',
+    coordinates:[33.8938,35.4865],
+    image:'https://images.unsplash.com/photo-1571008887538-b36bb32f4571?w=800&q=80',
+    organizer:'Beirut Sports Community',
+    capacity:5000,
+    price:0,
+    priceDisplay:'Free',
+    isNew:true,
+  },
+  {
+    id:'ev-024',
+    mohafaza:'Mount Lebanon',
+    title:'Jounieh Free Beach Volleyball Festival',
+    description:'A free open-air beach volleyball festival on the shores of Jounieh Bay. Open to amateur and semi-pro teams. Register your team and compete for the championship trophy. Food, music, and fun for the whole family — completely free of charge.',
+    sport:'Volleyball',sportIcon:'🏐',
+    date:'2026-07-12',time:'09:00',
+    location:'Jounieh Bay Beach, Jounieh',
+    coordinates:[33.9810,35.6178],
+    image:'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800&q=80',
+    organizer:'Jounieh Sports Federation',
+    capacity:2000,
+    price:0,
+    priceDisplay:'Free',
+    isNew:true,
+  },
+  {
+    id:'ev-025',
+    mohafaza:'North Lebanon',
+    title:'Tripoli Youth Football Day',
+    description:'A free football festival for youth players aged 8-18 in Tripoli. Coaching sessions by professional coaches, mini tournaments, and fun football activities. All equipment provided. Open to all skill levels — come enjoy the beautiful game at no cost!',
+    sport:'Football',sportIcon:'⚽',
+    date:'2026-10-03',time:'10:00',
+    location:'Tripoli Municipal Stadium, Tripoli',
+    coordinates:[34.4368,35.8498],
+    image:'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80',
+    organizer:'North Lebanon Football Federation',
+    capacity:3000,
+    price:0,
+    priceDisplay:'Free',
+    isNew:true,
+  },
 ];
 
 const EVENT_ROLES = {
@@ -2126,6 +2175,9 @@ const EVENT_ROLES = {
   'ev-020': {spectator:false,participant:true,freeForParticipant:false},
   'ev-021': {spectator:false,participant:true,freeForParticipant:false},
   'ev-022': {spectator:false,participant:true,freeForParticipant:false},
+  'ev-023': {spectator:false,participant:true,freeForParticipant:true},
+  'ev-024': {spectator:true, participant:true, freeForParticipant:true},
+  'ev-025': {spectator:true, participant:true, freeForParticipant:true},
 };
 
 const MOHAFAZAT = [
@@ -2146,7 +2198,7 @@ const SPORT_TYPES = [...new Set(EVENTS.map(e=>e.sport))];
 ============================================================ */
 const CHAT_RESPONSES = {
   greet:['Hello! Welcome to Lebanon Sports Hub 🎉 How can I help you today?','Hi there! I\'m SportBot, your AI sports assistant for Lebanon. What would you like to know?','Welcome! Ready to explore Lebanon\'s exciting sports events? Ask me anything!'],
-  events:['Lebanon Sports Hub hosts 22 amazing events across all 8 mohafazat in 2026! From the Beirut International Football Classic to the Baalbek Temple Run. Use the Events tab to explore all of them.','We have events ranging from Football and Basketball to Adventure Racing and Equestrian sports. Which sport interests you most?','Our 2026 calendar is packed! Football, tennis, skiing, cycling, running, martial arts and more across all of Lebanon.'],
+  events:['Lebanon Sports Hub hosts 25 amazing events across all 8 mohafazat in 2026! From the Beirut International Football Classic to the Baalbek Temple Run. Use the Events tab to explore all of them.','We have events ranging from Football and Basketball to Adventure Racing and Equestrian sports. Which sport interests you most?','Our 2026 calendar is packed! Football, tennis, skiing, cycling, running, martial arts and more across all of Lebanon.'],
   football:['⚽ Football fans will love the Beirut International Football Classic on March 15, 2026 at Camille Chamoun Sports City Stadium, and the Marjayoun Valley Football Derby on June 28. Both are incredible events!','The Beirut International Football Classic is our premier football event with 22,000 capacity. Don\'t miss it!'],
   skiing:['⛷️ The Faraya Ski & Snowboard Grand Prix on January 25, 2026 is Lebanon\'s premier winter sports event. The Faraya-Mzaar slopes are world-class!','Winter sports lovers should head to Faraya! The Grand Prix features slalom, giant slalom, and freestyle events.'],
   running:['🏃 Check out the Beirut Marathon on November 8, the Cedars Mountain Trail Run on October 3, and the Baalbek Temple Run on April 12. Three incredible running events!','The Beirut Marathon is one of the most celebrated runs in the Middle East with 40,000 participants!'],
