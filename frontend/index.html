@@ -1783,6 +1783,8 @@ priceDisplay:'$50',
     image:'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80',
     organizer:'AUB Athletics Department',
     capacity:3500,
+    price:25,
+    priceDisplay:'$25',
     isNew:true,
   },
   /* MOUNT LEBANON */
@@ -2184,6 +2186,7 @@ let markers = [];
 let chatOpen = false;
 let filterMohafaza = 'All';
 let filterSport = 'All';
+let filterFree = false;
 let searchQuery = '';
 let chatInitialized = false;
 let drawerOpen = false;
@@ -2626,6 +2629,15 @@ function renderEvents(){
         `).join('')}
       </div>
 
+      <!-- FREE EVENTS TOGGLE -->
+      <div style="margin-top:.5rem">
+        <span class="filter-chip ${filterFree?'active':''}" 
+          style="${filterFree?'background:#16a34a;border-color:#16a34a;color:#fff':''}"
+          onclick="setFreeFilter(this)">
+          🆓 Free Events
+        </span>
+      </div>
+
       <!-- RESULTS COUNT -->
       <div style="margin-bottom:1.5rem;font-size:.875rem;color:var(--gray-500)">
         Showing <strong>${filtered.length}</strong> event${filtered.length!==1?'s':''} 
@@ -2676,11 +2688,12 @@ function getFilteredEvents(){
   return EVENTS.filter(e=>{
     const matchMohafaza = filterMohafaza==='All' || e.mohafaza===filterMohafaza;
     const matchSport = filterSport==='All' || e.sport===filterSport;
+    const matchFree = !filterFree || (!e.price || e.price===0);
     const matchSearch = !searchQuery || 
       e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       e.sport.toLowerCase().includes(searchQuery.toLowerCase()) ||
       e.location.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchMohafaza && matchSport && matchSearch;
+    return matchMohafaza && matchSport && matchFree && matchSearch;
   });
 }
 
@@ -2698,8 +2711,24 @@ function setSportFilter(val, el){
   refreshEvents();
 }
 
+function setFreeFilter(el){
+  filterFree=!filterFree;
+  if(filterFree){
+    el.classList.add('active');
+    el.style.background='#16a34a';
+    el.style.borderColor='#16a34a';
+    el.style.color='#fff';
+  } else {
+    el.classList.remove('active');
+    el.style.background='';
+    el.style.borderColor='';
+    el.style.color='';
+  }
+  refreshEvents();
+}
+
 function clearFilters(){
-  filterMohafaza='All';filterSport='All';searchQuery='';
+  filterMohafaza='All';filterSport='All';filterFree=false;searchQuery='';
   navigate('events');
 }
 
