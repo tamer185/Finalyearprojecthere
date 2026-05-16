@@ -1156,66 +1156,6 @@ def set_admin_password(email, plain_password):
 
 @app.route("/api/gemini-chat", methods=["POST"])
 def gemini_chat():
-    """Proxy to Gemini API — keeps API key server-side."""
-    data = request.get_json() or {}
-    user_message = data.get("message", "").strip()
-    context = data.get("context", "")
-
-    if not user_message:
-        return jsonify({"error": "message is required"}), 400
-
-    gemini_key = os.environ.get("GEMINI_API_KEY", "")
-    if not gemini_key:
-        return jsonify({"error": "Gemini API not configured"}), 503
-
-    # Build prompt with app context
-    system_prompt = """You are SportBot, the AI assistant for Lebanon Sports Hub — a platform for sports events across Lebanon's 8 mohafazat (Beirut, Mount Lebanon, North Lebanon, South Lebanon, Nabatieh, Bekaa, Baalbek-Hermel, Akkar).
-
-Your role:
-- Help users find sports events in Lebanon
-- Answer questions about the app (registration, events, map, profile)
-- Be friendly, concise, and use relevant emojis
-- For event queries, mention they can browse by region or sport on the Events page
-- For map queries, tell them to use the Map tab
-- Keep answers under 150 words
-- Always respond in the same language the user writes in
-
-App features: Events page, Interactive Map, User Registration, My Events, AI Assistant (you), Admin Panel."""
-
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": system_prompt + "\n\nUser: " + user_message}
-                ]
-            }
-        ],
-        "generationConfig": {
-            "maxOutputTokens": 200,
-            "temperature": 0.7,
-        }
-    }
-
-    try:
-        resp = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={gemini_key}",
-            json=payload,
-            timeout=10
-        )
-        result = resp.json()
-        if resp.ok:
-            text = result["candidates"][0]["content"]["parts"][0]["text"]
-            return jsonify({"reply": text})
-        else:
-            error = result.get("error", {}).get("message", "Gemini error")
-            return jsonify({"error": error}), 502
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-
-@app.route("/api/gemini-chat", methods=["POST"])
-def gemini_chat():
     """Proxy to Gemini API -- keeps API key server-side."""
     data = request.get_json() or {}
     user_message = data.get("message", "").strip()
