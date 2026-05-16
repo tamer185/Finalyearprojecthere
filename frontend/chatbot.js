@@ -404,9 +404,23 @@ async function generateResponse(message) {
             `💡 Say "show on map" to see its location or "how to register" to join!`;
     }
 
-    // ── 17. Default — region overview ──
+    // ── 17. Try Gemini AI for anything else ──
+    try {
+        const geminiRes = await fetch(`${API}/api/gemini-chat`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message })
+        });
+        if (geminiRes.ok) {
+            const geminiData = await geminiRes.json();
+            if (geminiData.reply) return geminiData.reply;
+        }
+    } catch(e) {}
+
+    // ── 18. Final fallback ──
     const allMohs = Object.values(MOHAFAZA_MAP);
-    return getBotReply(message) || 
+    return getBotReply(message) ||
         `I'm not sure about that, but here are all regions you can explore:\n\n` +
         allMohs.map(m => `${m.flag} **${m.name}**`).join(' • ') +
         `\n\nOr ask me: "events in [region]", "show me [sport] events", "open map"`;
