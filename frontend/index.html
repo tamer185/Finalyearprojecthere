@@ -4335,6 +4335,49 @@ function stopPendingPolling(){
   if(_pendingPollInterval){clearInterval(_pendingPollInterval);_pendingPollInterval=null;}
 }
 
+// ── Poll event registrations for status changes ──────────────
+let _regPollInterval = null;
+let _lastRegStatuses = {};
+
+function startRegPolling(){
+  stopRegPolling();
+  const user = Session.getUser();
+  if(!user) return;
+  _regPollInterval = setInterval(async()=>{
+    const u = Session.getUser();
+    if(!u) return stopRegPolling();
+    try{
+      const res = await fetch(`${API}/api/my-registrations`,{credentials:'include'});
+      if(!res.ok) return;
+      const regs = await res.json();
+      _userRegs = regs;
+
+      // Check for new rejections or approvals
+      regs.forEach(r=>{
+        const prev = _lastRegStatuses[r.id];
+        if(prev && prev !== r.status){
+          if(r.status === 'rejected'){
+            toast(`❌ Your registration for "${r.event_title}" was rejected.`,'error',5000);
+          } else if(r.status === 'approved'){
+            toast(`✅ Your registration for "${r.event_title}" was approved!`,'success',5000);
+          }
+        }
+        _lastRegStatuses[r.id] = r.status;
+      });
+
+      // Refresh My Events page if open
+      if(currentPage === 'myevents'){
+        const root = document.getElementById('appRoot');
+        if(root) renderMyEvents(root);
+      }
+    }catch(e){}
+  }, 10000); // every 10 seconds
+}
+
+function stopRegPolling(){
+  if(_regPollInterval){clearInterval(_regPollInterval);_regPollInterval=null;}
+}
+
 /* ============================================================
    NOTIFICATION SYSTEM
 ============================================================ */
