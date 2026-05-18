@@ -2239,6 +2239,58 @@ let chatOpen = false;
 let filterMohafaza = 'All';
 let filterSport = 'All';
 let filterFree = false;
+
+// ── Merge backend DB events with hardcoded EVENTS array ───────
+let _backendEvents = [];
+let _allEvents = [...EVENTS]; // start with hardcoded
+
+async function loadBackendEvents(){
+  try{
+    const res = await fetch(`${API}/api/events`, {credentials:'include'});
+    if(!res.ok) return;
+    const dbEvents = await res.json();
+    if(!dbEvents || dbEvents.length === 0) return;
+
+    // Map backend event fields to frontend format
+    const mapped = dbEvents.map(e => ({
+      id:          e.id ? 'db-' + e.id : e.id,
+      title:       e.title || '',
+      description: e.description || '',
+      sport:       e.sport_category || '',
+      sportIcon:   getSportIcon(e.sport_category),
+      mohafaza:    e.venue_city || 'Beirut',
+      date:        e.event_date || '',
+      time:        (e.event_time || '').slice(0,5),
+      location:    (e.venue_name || '') + (e.venue_city ? ', ' + e.venue_city : ''),
+      coordinates: [33.89, 35.50], // default Beirut
+      image:       e.image_url || 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&q=80',
+      organizer:   'Lebanon Sports Hub',
+      capacity:    e.max_participants || 50,
+      price:       e.price || 0,
+      priceDisplay: e.price > 0 ? '$' + e.price : 'Free',
+      status:      e.status || 'upcoming',
+      isNew:       true,
+    }));
+
+    _backendEvents = mapped;
+    // Merge: backend events first, then hardcoded (avoid duplicates by title)
+    const hardcodedTitles = new Set(EVENTS.map(e => e.title.toLowerCase()));
+    const newOnes = mapped.filter(e => !hardcodedTitles.has(e.title.toLowerCase()));
+    _allEvents = [...EVENTS, ...newOnes];
+  } catch(e) {
+    _allEvents = [...EVENTS];
+  }
+}
+
+function getSportIcon(sport){
+  const icons = {
+    'Football':'⚽','Basketball':'🏀','Tennis':'🎾','Running':'🏃','Swimming':'🏊',
+    'Volleyball':'🏐','Cycling':'🚴','Boxing':'🥊','Skiing':'⛷️','Triathlon':'🏊',
+    'Padel':'🎾','Athletics':'🏃','Martial Arts':'🥋','Trail Running':'🏔️',
+    'Adventure':'🧗','Water Sports':'🏄','Equestrian':'🏇','Multi-Sport':'🏆',
+  };
+  return icons[sport] || '🏆';
+}
 let searchQuery = '';
 let chatInitialized = false;
 let drawerOpen = false;
@@ -2379,7 +2431,7 @@ function render(page){
   root.innerHTML='';
   switch(page){
     case 'home': root.innerHTML=renderHome(); attachHomeEvents(); break;
-    case 'events': root.innerHTML=renderEvents(); attachEventsEvents(); break;
+    case 'events': loadBackendEvents().then(()=>{root.innerHTML=renderEvents(); attachEventsEvents();}); break;
     case 'map': root.innerHTML=renderMap(); initMap(); break;
     case 'chatbot': navigate('home'); openChat(); return;
     case 'eventDetail': root.innerHTML=renderEventDetail(currentEvent); attachDetailEvents(); break;
@@ -2397,7 +2449,7 @@ function render(page){
    HOME PAGE
 ============================================================ */
 function renderHome(){
-  const featuredEvents = EVENTS.filter(e=>e.isNew).slice(0,6);
+  const featuredEvents = _allEvents.filter(e=>e.isNew).slice(0,6);
   const upcomingEvents = EVENTS.sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,3);
   return `
 <div class="page no-pad">
@@ -2464,7 +2516,7 @@ function renderHome(){
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-top:2rem">
         ${MOHAFAZAT.map(m=>{
-          const count=EVENTS.filter(e=>e.mohafaza===m.name).length;
+          const count=_allEvents.filter(e=>e.mohafaza===m.name).length;
           return `<div onclick="navigate('events');setTimeout(()=>{setMohafazaFilter('${m.name}')},100)"
             style="background:#fff;border:1.5px solid var(--gray-200);border-radius:var(--radius-lg);
             overflow:hidden;cursor:pointer;transition:var(--transition-slow);text-align:center;"
@@ -2737,7 +2789,7 @@ function attachEventsEvents(){
 }
 
 function getFilteredEvents(){
-  return EVENTS.filter(e=>{
+  return _allEvents.filter(e=>{
     const matchMohafaza = filterMohafaza==='All' || e.mohafaza===filterMohafaza;
     const matchSport = filterSport==='All' || e.sport===filterSport;
     const matchFree = !filterFree || (!e.price || e.price===0);
@@ -2818,7 +2870,7 @@ function refreshEvents(){
 function renderEventDetail(idOrObj){
   const e = typeof idOrObj==='string' ? EVENTS.find(ev=>ev.id===idOrObj) : EVENTS.find(ev=>ev.id===idOrObj);
   if(!e) return '<div class="page"><div class="container"><h2 style="margin-top:4rem">Event not found</h2></div></div>';
-  const related=EVENTS.filter(ev=>ev.mohafaza===e.mohafaza && ev.id!==e.id).slice(0,3);
+  const related=_allEvents.filter(ev=>ev.mohafaza===e.mohafaza && ev.id!==e.id).slice(0,3);
   const user=Session.getUser();
   return `
 <div class="page no-pad">
