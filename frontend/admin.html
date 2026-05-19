@@ -838,7 +838,7 @@ async function renderEventsAdmin(){
 
 async function loadEventsTable(){
   try{
-    const res = await fetch(API+'/api/admin/events-list',{credentials:'include'});
+    const res = await fetch(API+'/api/events');
     _adminEvents = res.ok ? await res.json() : [];
     const countEl = document.getElementById('eventsCount');
     if(countEl) countEl.textContent = _adminEvents.length + ' events total';
@@ -947,7 +947,7 @@ async function saveAdminEvent(id){
     if(res.ok){
       toast(isEdit?'Event updated!':'Event created!','ok');
       document.getElementById('evModal').remove();
-      await showTab('events');
+      await renderEventsAdmin();
     } else {
       toast(data.error||'Failed to save','err');
       btn.disabled=false; btn.textContent=isEdit?'Update Event':'Save Event';
@@ -962,7 +962,7 @@ async function deleteAdminEvent(id, title){
   if(!confirm('Delete "'+title+'"? This cannot be undone.')) return;
   try{
     const res = await fetch(API+'/api/admin/events/'+id,{method:'DELETE',credentials:'include'});
-    if(res.ok){ toast('Event deleted','ok'); await loadEventsTable(); }
+    if(res.ok){ toast('Event deleted','ok'); await renderEventsAdmin(); }
     else { const d=await res.json(); toast(d.error||'Failed','err'); }
   }catch(ex){ toast('Error: '+ex.message,'err'); }
 }

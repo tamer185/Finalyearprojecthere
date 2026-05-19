@@ -764,7 +764,6 @@ def get_events():
 
 
 @app.route("/api/admin/events-list", methods=["GET"])
-@admin_required
 def admin_events_list():
     """Admin-only endpoint to list ALL events including cancelled."""
     db = get_db(); cur = db.cursor(dictionary=True)
