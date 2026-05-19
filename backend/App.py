@@ -759,7 +759,14 @@ def get_events():
     cur.close(); db.close()
     for ev in events:
         if ev.get("event_date"): ev["event_date"] = str(ev["event_date"])
-        if ev.get("event_time"): ev["event_time"] = str(ev["event_time"])
+        if ev.get("event_time"):
+            t = ev["event_time"]
+            if hasattr(t, "seconds"):
+                h, rem = divmod(int(t.total_seconds()), 3600)
+                m, s   = divmod(rem, 60)
+                ev["event_time"] = f"{h:02d}:{m:02d}:{s:02d}"
+            else:
+                ev["event_time"] = str(t)
     return jsonify(events)
 
 
@@ -786,7 +793,14 @@ def admin_events_list():
     cur.close(); db.close()
     for ev in events:
         if ev.get("event_date"): ev["event_date"] = str(ev["event_date"])
-        if ev.get("event_time"): ev["event_time"] = str(ev["event_time"])
+        if ev.get("event_time"):
+            t = ev["event_time"]
+            if hasattr(t, "seconds"):
+                h, rem = divmod(int(t.total_seconds()), 3600)
+                m, s   = divmod(rem, 60)
+                ev["event_time"] = f"{h:02d}:{m:02d}:{s:02d}"
+            else:
+                ev["event_time"] = str(t)
     return jsonify(events)
 
 
