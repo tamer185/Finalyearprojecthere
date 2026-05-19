@@ -739,22 +739,13 @@ def admin_required(f):
 @app.route("/api/events", methods=["GET"])
 def get_events():
     db = get_db(); cur = db.cursor(dictionary=True)
-    # Add price and venue_city columns if they don't exist
-    try:
-        cur.execute("ALTER TABLE events ADD COLUMN price DECIMAL(10,2) DEFAULT 0")
-        db.commit()
-    except Exception:
-        pass
-    try:
-        cur.execute("ALTER TABLE events ADD COLUMN venue_city VARCHAR(100) DEFAULT NULL")
-        db.commit()
-    except Exception:
-        pass
-    try:
-        cur.execute("ALTER TABLE events ADD COLUMN venue_name_text VARCHAR(255) DEFAULT NULL")
-        db.commit()
-    except Exception:
-        pass
+    for col_sql in [
+        "ALTER TABLE events ADD COLUMN price DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE events ADD COLUMN venue_city VARCHAR(100) DEFAULT NULL",
+        "ALTER TABLE events ADD COLUMN venue_name_text VARCHAR(255) DEFAULT NULL",
+    ]:
+        try: cur.execute(col_sql); db.commit()
+        except Exception: pass
     cur.execute("""
         SELECT e.*,
                COALESCE(e.venue_city, v.city)  AS venue_city,
@@ -763,6 +754,34 @@ def get_events():
         LEFT JOIN venues v ON e.venue_id = v.id
         WHERE e.status != 'cancelled'
         ORDER BY e.event_date ASC
+    """)
+    events = cur.fetchall()
+    cur.close(); db.close()
+    for ev in events:
+        if ev.get("event_date"): ev["event_date"] = str(ev["event_date"])
+        if ev.get("event_time"): ev["event_time"] = str(ev["event_time"])
+    return jsonify(events)
+
+
+@app.route("/api/admin/events-list", methods=["GET"])
+@admin_required
+def admin_events_list():
+    """Admin-only endpoint to list ALL events including cancelled."""
+    db = get_db(); cur = db.cursor(dictionary=True)
+    for col_sql in [
+        "ALTER TABLE events ADD COLUMN price DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE events ADD COLUMN venue_city VARCHAR(100) DEFAULT NULL",
+        "ALTER TABLE events ADD COLUMN venue_name_text VARCHAR(255) DEFAULT NULL",
+    ]:
+        try: cur.execute(col_sql); db.commit()
+        except Exception: pass
+    cur.execute("""
+        SELECT e.*,
+               COALESCE(e.venue_city, v.city) AS venue_city,
+               COALESCE(e.venue_name_text, v.name) AS venue_name
+        FROM events e
+        LEFT JOIN venues v ON e.venue_id = v.id
+        ORDER BY e.created_at DESC
     """)
     events = cur.fetchall()
     cur.close(); db.close()

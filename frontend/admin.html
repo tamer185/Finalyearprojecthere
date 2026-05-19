@@ -838,7 +838,7 @@ async function renderEventsAdmin(){
 
 async function loadEventsTable(){
   try{
-    const res = await fetch(API+'/api/events',{credentials:'include'});
+    const res = await fetch(API+'/api/admin/events-list',{credentials:'include'});
     _adminEvents = res.ok ? await res.json() : [];
     const countEl = document.getElementById('eventsCount');
     if(countEl) countEl.textContent = _adminEvents.length + ' events total';
@@ -947,7 +947,7 @@ async function saveAdminEvent(id){
     if(res.ok){
       toast(isEdit?'Event updated!':'Event created!','ok');
       document.getElementById('evModal').remove();
-      await loadEventsTable();
+      await showTab('events');
     } else {
       toast(data.error||'Failed to save','err');
       btn.disabled=false; btn.textContent=isEdit?'Update Event':'Save Event';
