@@ -108,6 +108,23 @@ def chat_proxy():
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "lsh_secret_2026")
+
+# ── Global JSON serializer fix ────────────────────────────────
+import datetime as _dt
+class _SafeJSONProvider(app.json_provider_class):
+    def default(self, o):
+        if isinstance(o, _dt.timedelta):
+            total = int(o.total_seconds())
+            h, rem = divmod(abs(total), 3600)
+            m, s   = divmod(rem, 60)
+            return f"{h:02d}:{m:02d}:{s:02d}"
+        if isinstance(o, (_dt.date, _dt.datetime)):
+            return o.isoformat()
+        if isinstance(o, _dt.time):
+            return o.strftime("%H:%M:%S")
+        return super().default(o)
+app.json_provider_class = _SafeJSONProvider
+app.json = _SafeJSONProvider(app)
 # CURRENT — too loose, fails with credentials in some browsers
 CORS(app, supports_credentials=True)
 
