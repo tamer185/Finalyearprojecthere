@@ -739,8 +739,26 @@ def admin_required(f):
 @app.route("/api/events", methods=["GET"])
 def get_events():
     db = get_db(); cur = db.cursor(dictionary=True)
+    # Add price and venue_city columns if they don't exist
+    try:
+        cur.execute("ALTER TABLE events ADD COLUMN price DECIMAL(10,2) DEFAULT 0")
+        db.commit()
+    except Exception:
+        pass
+    try:
+        cur.execute("ALTER TABLE events ADD COLUMN venue_city VARCHAR(100) DEFAULT NULL")
+        db.commit()
+    except Exception:
+        pass
+    try:
+        cur.execute("ALTER TABLE events ADD COLUMN venue_name_text VARCHAR(255) DEFAULT NULL")
+        db.commit()
+    except Exception:
+        pass
     cur.execute("""
-        SELECT e.*, v.name AS venue_name, v.city AS venue_city
+        SELECT e.*,
+               COALESCE(e.venue_city, v.city)  AS venue_city,
+               COALESCE(e.venue_name_text, v.name) AS venue_name
         FROM events e
         LEFT JOIN venues v ON e.venue_id = v.id
         WHERE e.status != 'cancelled'
@@ -749,10 +767,8 @@ def get_events():
     events = cur.fetchall()
     cur.close(); db.close()
     for ev in events:
-        if ev.get("event_date"):
-            ev["event_date"] = str(ev["event_date"])
-        if ev.get("event_time"):
-            ev["event_time"] = str(ev["event_time"])
+        if ev.get("event_date"): ev["event_date"] = str(ev["event_date"])
+        if ev.get("event_time"): ev["event_time"] = str(ev["event_time"])
     return jsonify(events)
 
 
@@ -782,21 +798,37 @@ def create_event():
     if not data.get("title") or not data.get("event_date"):
         return jsonify({"error": "title and event_date are required"}), 400
     db = get_db(); cur = db.cursor()
-    cur.execute("""
-        INSERT INTO events
-          (title, description, sport_category, venue_id, event_date, event_time,
-           max_participants, status, image_url, created_by)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    """, (
-        data["title"], data.get("description"), data.get("sport_category"),
-        data.get("venue_id"), data["event_date"], data.get("event_time"),
-        data.get("max_participants", 50), data.get("status", "upcoming"),
-        data.get("image_url"), session["admin_id"],
-    ))
-    event_id = cur.lastrowid
-    log_action(cur, session["admin_id"], f"Created event '{data['title']}'", "event", event_id)
-    db.commit(); cur.close(); db.close()
-    return jsonify({"message": "Event created", "id": event_id}), 201
+
+    # Ensure extra columns exist
+    for col_sql in [
+        "ALTER TABLE events ADD COLUMN price DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE events ADD COLUMN venue_city VARCHAR(100) DEFAULT NULL",
+        "ALTER TABLE events ADD COLUMN venue_name_text VARCHAR(255) DEFAULT NULL",
+    ]:
+        try: cur.execute(col_sql); db.commit()
+        except Exception: pass
+
+    try:
+        cur.execute("""
+            INSERT INTO events
+              (title, description, sport_category, venue_id, event_date, event_time,
+               max_participants, status, image_url, created_by, price, venue_city, venue_name_text)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            data["title"], data.get("description"), data.get("sport_category"),
+            None, data["event_date"], data.get("event_time"),
+            data.get("max_participants", 50), data.get("status", "upcoming"),
+            data.get("image_url"), session["admin_id"],
+            data.get("price", 0), data.get("venue_city", "Beirut"),
+            data.get("venue_name", "")
+        ))
+        event_id = cur.lastrowid
+        log_action(cur, session["admin_id"], f"Created event '{data['title']}'", "event", event_id)
+        db.commit(); cur.close(); db.close()
+        return jsonify({"message": "Event created", "id": event_id}), 201
+    except Exception as ex:
+        cur.close(); db.close()
+        return jsonify({"error": str(ex)}), 500
 
 
 @app.route("/api/admin/events/<int:event_id>", methods=["PUT"])
@@ -804,30 +836,46 @@ def create_event():
 def update_event(event_id):
     data = request.get_json()
     db = get_db(); cur = db.cursor()
-    cur.execute("""
-        UPDATE events SET title=%s, description=%s, sport_category=%s,
-          venue_id=%s, event_date=%s, event_time=%s, max_participants=%s,
-          status=%s, image_url=%s
-        WHERE id=%s
-    """, (
-        data.get("title"), data.get("description"), data.get("sport_category"),
-        data.get("venue_id"), data.get("event_date"), data.get("event_time"),
-        data.get("max_participants"), data.get("status"), data.get("image_url"),
-        event_id,
-    ))
-    log_action(cur, session["admin_id"], f"Updated event id={event_id}", "event", event_id)
-    db.commit(); cur.close(); db.close()
-    return jsonify({"message": "Event updated"})
+    for col_sql in [
+        "ALTER TABLE events ADD COLUMN price DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE events ADD COLUMN venue_city VARCHAR(100) DEFAULT NULL",
+        "ALTER TABLE events ADD COLUMN venue_name_text VARCHAR(255) DEFAULT NULL",
+    ]:
+        try: cur.execute(col_sql); db.commit()
+        except Exception: pass
+    try:
+        cur.execute("""
+            UPDATE events SET title=%s, description=%s, sport_category=%s,
+              event_date=%s, event_time=%s, max_participants=%s,
+              status=%s, image_url=%s, price=%s, venue_city=%s, venue_name_text=%s
+            WHERE id=%s
+        """, (
+            data.get("title"), data.get("description"), data.get("sport_category"),
+            data.get("event_date"), data.get("event_time"),
+            data.get("max_participants"), data.get("status"), data.get("image_url"),
+            data.get("price", 0), data.get("venue_city", "Beirut"),
+            data.get("venue_name", ""), event_id,
+        ))
+        log_action(cur, session["admin_id"], f"Updated event id={event_id}", "event", event_id)
+        db.commit(); cur.close(); db.close()
+        return jsonify({"message": "Event updated"})
+    except Exception as ex:
+        cur.close(); db.close()
+        return jsonify({"error": str(ex)}), 500
 
 
 @app.route("/api/admin/events/<int:event_id>", methods=["DELETE"])
 @admin_required
 def delete_event(event_id):
-    db = get_db(); cur = db.cursor()
-    cur.execute("UPDATE events SET status='cancelled' WHERE id=%s", (event_id,))
-    log_action(cur, session["admin_id"], f"Cancelled event id={event_id}", "event", event_id)
-    db.commit(); cur.close(); db.close()
-    return jsonify({"message": "Event cancelled"})
+    db = get_db(); cur = db.cursor(dictionary=True)
+    cur.execute("SELECT title FROM events WHERE id=%s", (event_id,))
+    ev = cur.fetchone()
+    cur2 = db.cursor()
+    cur2.execute("DELETE FROM events WHERE id=%s", (event_id,))
+    if ev:
+        log_action(cur2, session["admin_id"], f"Deleted event '{ev['title']}'", "event", event_id)
+    db.commit(); cur.close(); cur2.close(); db.close()
+    return jsonify({"message": "Event deleted"})
 
 
 # ------------------------------------------------------------------------------
